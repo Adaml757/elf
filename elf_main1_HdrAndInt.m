@@ -33,25 +33,42 @@ infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linea
 sets            = elf_hdr_brackets(info);                             % determine which images are part of the same scene
                     Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(sets, 1), dataSet);
 
-para.stages.calibrate = true;
-para.stages.project = true;
-para.stages.stitch = false;
-para.stages.filter = true;
-para.stages.calculateInt = true;
-para.saveSceneTifs = true;
+
 
 %% Calculate black levels for all images (from calibration or dark images)
 [info, ~, infoSum.blackWarnings] = Calibrator.calculateBlackLevels(info, imgFormat);
 cal = Calibrator(infoSum.Model{1}, [infoSum.Width infoSum.Height], para.ana.colourCalibType);
 proj = Projector.fromInfoStructs(infoSum, cal.ProjectionInfo, para.azi, para.ele2);
 
+para.stages.stitch = false;
+para.stages.filter = true;
+para.stages.calculateInt = true;
+para.saveSceneTifs = true;
+
 %% Set up projection constants
-% Calculate a projection vector to transform an orthographic/equidistant/equisolid input image into an equirectangular output image
 % Also creates I_info.grids
-if para.stages.project
-    projection_ind = proj.calculateProjection();
+switch para.ana.targetProjection
+    case "equirectangular"
+        % Calculate a projection vector to transform a fisheye input image 
+        % into an equirectangular output image
+        projection_ind = proj.calculateProjection();
+        infoSum.grids = proj.getProjectionInfo();
+        projSize = proj.RectSize;
+
+    case {"equisolid", "equidistant", "stereographic", "orthographic"}
+        % Calculate a projection vector to crop/resize a fisheye input image 
+        % and/or change its fisheye projection
+        if para.ana.targetImageSize(1)==0 && para.ana.targetImageSize(2)==0
+            [projection_ind, newProj] = proj.crop2ImageCircle(90);
+        else
+            [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize);
+        end
+        infoSum.grids = newProj.getProjectionInfo();
+        projSize = newProj.Size;
+
+    otherwise
+        error("Unknown target projection: %s", para.ana.targetProjection);
 end
-infoSum.grids = proj.getProjectionInfo();
 elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
 
 %% Step 1: Unwarp images and calculate HDR scenes
@@ -65,13 +82,9 @@ for iSet = 1:size(sets, 1)
     setStart    = sets(iSet, 1);          % first image in this set
     setEnd      = sets(iSet, 2);          % last image in this set
     nIms        = setEnd - setStart + 1;  % total number of images in this set
-    if para.stages.project
-        im_proj     = zeros(proj.RectSize(1), proj.RectSize(2), proj.RectSize(3), nIms);  % pre-allocate
-        conf_proj   = zeros(proj.RectSize(1), proj.RectSize(2), proj.RectSize(3), nIms);  % pre-allocate
-    else
-        im_proj     = zeros(proj.Size(1), proj.Size(2), proj.Size(3), nIms);  % pre-allocate
-        conf_proj   = zeros(proj.Size(1), proj.Size(2), proj.Size(3), nIms);  % pre-allocate
-    end
+
+    im_proj     = zeros(projSize(1), projSize(2), projSize(3), nIms);  % pre-allocate
+    conf_proj   = im_proj;  % pre-allocate
 %     im_proj_cal = zeros(lEle, lAzi, infoSum.SamplesPerPixel, numims);  % pre-allocate
     rawWhiteLevels = zeros(3, nIms);        % pre-allocate; raw white levels (after black subtraction)
     
@@ -90,14 +103,9 @@ for iSet = 1:size(sets, 1)
         % Calibrate and calculate intensity confidence
         [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
         
-        % Umwarp image
-        if para.stages.project
-            im_proj(:, :, :, i) = Projector.apply(im_cal, projection_ind, proj.RectSize);
-            conf_proj(:, :, :, i)   = Projector.apply(conf, projection_ind, proj.RectSize);
-        else
-            im_proj(:, :, :, i) = im_cal;
-            conf_proj(:, :, :, i) = conf;
-        end
+        % Reproject/Resize/Crop image
+        im_proj(:, :, :, i) = Projector.apply(im_cal, projection_ind, proj.RectSize);
+        conf_proj(:, :, :, i)   = Projector.apply(conf, projection_ind, proj.RectSize);
         %         im_proj_cal(:, :, :, i) = cal.applySpectral(im_proj(:, :, :, i), info(imnr), para.ana.colourCalibType); % only needed for 'histcomb'-type intensity calculation, but not time-intensive
 
     end
