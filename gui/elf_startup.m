@@ -1,9 +1,9 @@
 function [para, status, gui] = elf_startup(modules, cbhandle, rootfolder, verbose, useoldfolder)
 
 %% defaults
-if nargin < 4 || isempty(useoldfolder), useoldfolder = true; end
-if nargin < 3 || isempty(verbose), verbose = true; end
-if nargin < 2 || isempty(rootfolder), rootfolder = ''; end
+if nargin < 5 || isempty(useoldfolder), useoldfolder = true; end
+if nargin < 4 || isempty(verbose), verbose = true; end
+if nargin < 3 || isempty(rootfolder), rootfolder = ''; end
 
 %% get basic parameters
 if useoldfolder
