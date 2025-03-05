@@ -1,6 +1,6 @@
 function meandata = elf_analysis_datasetmean(data, sel, intOnly, datasetMeanType)
 % ELF_ANALYSIS_DATASETMEAN averages intensity (and spatial) descriptors for a whole dataset.
-%   Individual descriptors should have been calculated and saved before by elf_main1_HdrAndInt.
+%   Individual descriptors should have been calculated and saved before by elf_main1_perScene.
 %
 %   Example:
 %   meandata = elf_analysis_datasetmean(data, sel, verbose, para.plot.datasetMeanType)  
@@ -14,9 +14,9 @@ function meandata = elf_analysis_datasetmean(data, sel, intOnly, datasetMeanType
 %   meandata          - 1 x 1 struct, containing the same fields as data, contains the mean results
 %
 % Uses:       None
-% Used by:    elf_main3_intsummary
-% Call stack: elf_main3_intsummary -> elf_analysis_datasetmean
-% See also:   elf_main3_intsummary, elf_analysis
+% Used by:    core_perEnvironment
+% Call stack: core_perEnvironment -> elf_analysis_datasetmean
+% See also:   core_perEnvironment, elf_analysis
 
 %% Check inputs
 if nargin < 4 || isempty(datasetMeanType), datasetMeanType = 'logmean'; end

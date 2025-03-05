@@ -1,7 +1,7 @@
 classdef Projector
     % PROJECTOR provides methods to change the projection of fisheye images
     %
-    % Call sequence: elf -> elf_main1_HdrAndInt -> Projector
+    % Call sequence: elf -> elf_main1_perScene -> Projector
     %
     % See also: Calibrator
 

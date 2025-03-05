@@ -9,9 +9,9 @@ function sets = elf_hdr_brackets(rawinfo, verbose)
 % Outputs:
 %   sets - m x 2 double, containing the numbers of the first and last image of each bracket
 % 
-% Call sequence: elf -> elf_main3_summary -> elf_hdr_brackets
+% Call sequence: elf -> core_perEnvironment -> elf_hdr_brackets
 %
-% See also: elf_main3_summary, elf_info_collect
+% See also: core_perEnvironment, elf_info_collect
 
 if nargin<2, verbose = true; end
 

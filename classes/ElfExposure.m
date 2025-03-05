@@ -2,7 +2,7 @@ classdef ElfExposure
     % ELFEXPOSURE Summary of this class goes here
     %   Detailed explanation goes here
 
-    % This class is meant to replace the current constructs in elf_main1_HdrAndInt
+    % This class is meant to replace the current constructs in elf_main1_perScene
     % There could be two other classes, ElfScene and Calibrator
     % Started on 2024/02/16, should be continued some time...
 

@@ -20,8 +20,8 @@ error('Currently not supported!')
 %
 % Uses:       None
 % Used by:    elf_analysis
-% Call stack: elf_main1_HdrAndInt -> elf_analysis_int
-% See also:   elf_main1_HdrAndInt, elf_analysis_int
+% Call stack: elf_main1_perScene -> elf_analysis_int
+% See also:   elf_main1_perScene, elf_analysis_int
 
 
 %% 

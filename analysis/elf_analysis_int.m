@@ -24,9 +24,9 @@ function [res, totalres] = elf_analysis_int(im, ele, type, hdivn, perc, verbose)
 % totalres          - results structure containing all whole-image intensity statistics
 %
 % Uses:       elf_analysis_average, elf_analysis_int_combine (for type 'histcomb')
-% Used by:    elf_main1_HdrAndInt
-% Call stack: elf_main1_HdrAndInt -> elf_analysis_int
-% See also:   elf_main1_HdrAndInt, elf_analysis_int_fromHDR, elf_analysis_int_combine, elf_analysis_average
+% Used by:    elf_main1_perScene
+% Call stack: elf_main1_perScene -> core_perScene -> elf_analysis_int
+% See also:   elf_main1_perScene, elf_analysis_int_fromHDR, elf_analysis_int_combine, elf_analysis_average
 
 %% check inputs
 if nargin < 6 || isempty(verbose),  verbose = false;     end

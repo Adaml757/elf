@@ -12,9 +12,9 @@ function elf_analysis_writestats(meandata, filename)
 % None.
 %
 % Uses:       None
-% Used by:    elf_main3_intsummary
-% Call stack: elf_main3_intsummary -> elf_analysis_datasetmean
-% See also:   elf_main3_intsummary, elf_analysis
+% Used by:    core_perEnvironment
+% Call stack: core_perEnvironment -> elf_analysis_datasetmean
+% See also:   core_perEnvironment, elf_analysis
 
     if exist(filename, 'file')
         delete(filename)

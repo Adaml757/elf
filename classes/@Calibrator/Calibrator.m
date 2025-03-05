@@ -2,9 +2,9 @@ classdef Calibrator
     % CALIBRATOR represents calibration information for a calibrated camera
     % to transform raw digital images to absolute spectral photon luminance (in photons/nm/s/sr/m^2)
     %
-    % Call sequence: elf -> elf_main1_HdrAndInt -> Calibrator
+    % Call sequence: elf -> elf_main1_perScene -> Calibrator
     %
-    % See also: elf_main1_HdrAndInt, elf_info_load, elf_io_loaddng
+    % See also: elf_main1_perScene, elf_info_load, elf_io_loaddng
 
     properties(SetAccess=immutable)
         CameraString
@@ -139,7 +139,7 @@ classdef Calibrator
             % Outputs:
             %   im          - M x N x 3 double, calibrated digital image (in photons/nm/s/sr/m^2)
             %
-            % See also: elf_main1_HdrAndInt, elf_info_load, elf_io_loaddng
+            % See also: elf_main1_perScene, elf_info_load, elf_io_loaddng
 
             % warning('Using standard D810 colour matrix'); 
             % wb_multipliers = [1.9531 1.0000 1.3359];

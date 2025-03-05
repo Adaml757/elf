@@ -18,9 +18,8 @@ for i = 1:length(datasets)
     fprintf('\n%d of %d\n', i, length(datasets));
     try
         dataset = datasets{i};
-        elf_main1_HdrAndInt(dataset, modules); close all
-        elf_main2_meanimage(dataset, modules); close all
-        elf_main3_intsummary(dataset, modules); close all
+        elf_main1_perScene(dataset, modules); close all
+        elf_main2_perEnvironment(dataset, modules); close all
         res(i) = 1;
     catch ME
         errors{i} = ME;

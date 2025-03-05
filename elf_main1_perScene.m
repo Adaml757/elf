@@ -1,7 +1,7 @@
-function elf_main1_HdrAndInt(dataSet, modules, imgFormat, verbose)
-% ELF_MAIN1_HDRANDINT calibrates and unwarps all images in a data set, sorts them into
+function elf_main1_perScene(dataSet, modules, imgFormat)
+% ELF_MAIN1_PERSCENE calibrates and unwarps all images in a data set, sorts them into
 % scenes, and calculates HDR representations of these scenes as mat for later contrast calculations and as tif for the mean image. 
-% Intensity descriptors are calculated for each exposure and then combined for scenes based on individual pixel reliability.
+% Per-scene analysis is performed for all loaded modules.
 %
 % Uses: elf_paths, elf_para, elf_info_collect, 
 %       elf_info_summarise, elf_hdr_brackets, 
@@ -13,20 +13,16 @@ function elf_main1_HdrAndInt(dataSet, modules, imgFormat, verbose)
 
 elf_paths;
 
-%% Run parameters
-saveJpgs        = false;                                              % save individual jpgs for each image? (takes extra time)
-
 %% check inputs
-if nargin < 4, verbose = false; end
 if nargin < 3 || isempty(imgFormat), imgFormat = "*.dng"; end
 if nargin < 2 , modules = {}; end
 if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
 
                     Logger.log(LogLevel.INFO, '\n');
-                    Logger.log(LogLevel.INFO, '----- ELF Step 1: Calibration, HDR and Intensity -----\n')
+                    Logger.log(LogLevel.INFO, '----- ELF Step 1: Calibration, HDR and Per-Scene Analysis -----\n')
 
 %% Set up paths and file names; read info, infosum and para, calculate sets
-para            = elf_para(modules, '', dataSet, imgFormat, verbose);
+para            = elf_para(modules, '', dataSet, imgFormat);
 info            = elf_info_collect(para.paths.datapath, imgFormat);   % this contains EXIF information and filenames, verbose==1 means there will be output during system check
 infoSum         = elf_info_summarise(info, false);                    % summarise EXIF information for this dataset. This will be saved for later use below
 infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linear images are used, correct for that during plotting
@@ -34,16 +30,10 @@ sets            = elf_hdr_brackets(info);                             % determin
                     Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(sets, 1), dataSet);
 
 
-
 %% Calculate black levels for all images (from calibration or dark images)
 [info, ~, infoSum.blackWarnings] = Calibrator.calculateBlackLevels(info, imgFormat);
 cal = Calibrator(infoSum.Model{1}, [infoSum.Width infoSum.Height], para.ana.colourCalibType);
 proj = Projector.fromInfoStructs(infoSum, cal.ProjectionInfo, para.azi, para.ele2);
-
-para.stages.stitch = false;
-para.stages.filter = true;
-para.stages.calculateInt = true;
-para.saveSceneTifs = true;
 
 %% Set up projection constants
 % Also creates I_info.grids

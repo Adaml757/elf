@@ -16,24 +16,17 @@ function data = elf_io_readwrite(para, action, fname, varinput)
 % para            = elf_io_readwrite(para, 'createfilenames')
 % para            = elf_io_readwrite(para, 'loadpara')    %all that para needs for this one is para.paths.fname_infosum_mat
 
-% MAIN1: elf_main1_HDRscenes
+% MAIN1: elf_main1_perScene
 %                   elf_io_readwrite(para, 'saveinfosum', [], infosum)
 %                   elf_io_readwrite(para, 'saveproj_tif', fname, im)
 %                   elf_io_readwrite(para, 'saveHDR_tif', scenename, im_HDR)
 %                   elf_io_readwrite(para, 'saveHDR_mat', scenename, im_HDR)
 
-% MAIN2: elf_main2_meanimage
+% MAIN2: elf_main2_perEnvironment
 % infosum         = elf_io_readwrite(para, 'loadinfosum')
 % im_HDR          = elf_io_readwrite(para, 'loadHDR_tif', scenename)
 %                   elf_io_readwrite(para, 'savemeanimg_tif', '', meanimage)
 %                   elf_io_readwrite(para, 'savemeanimg_jpg', '', meanimage)
-
-% MAIN3: elf_main3_luminance
-% infosum         = elf_io_readwrite(para, 'loadinfosum')
-% data            = elf_io_readwrite(para, 'loadproj_tif', fname, info)
-% im_HDR          = elf_io_readwrite(para, 'loadHDR_tif', scenename)
-%                   elf_io_readwrite(para, 'saveres', fname, data)
-%                   elf_io_readwrite(para, 'saveivep_jpg', fname, fh)
 
 % MAIN3p5: elf_main3p5_intsummary
 % infosum         = elf_io_readwrite(para, 'loadinfosum')

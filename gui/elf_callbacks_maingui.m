@@ -52,13 +52,12 @@ else
             end
             refresh = 0;
         case 'maingui_button2'
-            elf_main1_HdrAndInt(dataset, modules, imgformat, verbose);
+            elf_main1_perScene(dataset, modules, imgformat, verbose);
             refresh = 1;
         case 'maingui_button3'
-            elf_main2_meanimage(dataset, modules, verbose);
+            elf_main2_perEnvironment(dataset, modules, verbose);
             refresh = 1;
         case 'maingui_button4'
-            elf_main3_intsummary(dataset, modules);
             refresh = 1;
         case 'maingui_button5'
             elf_gui_chooseext(fullfile(para.paths.root, dataset), false);
@@ -67,9 +66,8 @@ else
             elf_main4_display(dataset, modules);
             refresh = 1;
         case 'maingui_buttonall'
-            elf_main1_HdrAndInt(dataset, modules, imgformat, verbose);
-            elf_main2_meanimage(dataset, modules, verbose);
-            elf_main3_intsummary(dataset, modules);
+            elf_main1_perScene(dataset, modules, imgformat, verbose);
+            elf_main2_perEnvironment(dataset, modules, verbose);
             refresh = 1;
         case 'maingui_buttonexp'
             elf_mainX_explore(dataset, modules); % TODO use frange
