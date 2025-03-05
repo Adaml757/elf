@@ -142,10 +142,10 @@ for iScene = 1:size(sets, 1)
 
     %% Perform per-scene analysis and plotting for all modules
     res.info = info(setStart);
-    for i = 1:length(modules)
-        modPerSceneFilename = [modName '_perScene'];
+    for i = 1:length(para.modules)
+        modPerSceneFilename = [para.modules{i} '_perScene'];
         if ~isempty(which(modPerSceneFilename))
-            res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, iScene, size(sets, 1));
+            res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, infoSum, iScene, size(sets, 1));
         end
     end
 
