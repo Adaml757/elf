@@ -15,7 +15,7 @@ function core_perEnvironment(para, infoSum, verbose)
 
                     Logger.log(LogLevel.INFO, '\b\b\b\b\b\b\b\b\b\b\b\b\b\n');
                     Logger.log(LogLevel.INFO, '----- ELF Step 2: Mean Image -----\n');
-                    Logger.log(LogLevel.INFO, '      Processing environment %s\n', dataSet);
+                    Logger.log(LogLevel.INFO, '      Processing environment %s\n', para.paths.dataset);
 
         %% Calculate mean image and thumbs
         if verbose
@@ -87,7 +87,7 @@ function core_perEnvironment(para, infoSum, verbose)
         elf_analysis_writestats(intMean, para.paths.fname_stats);
                 
         %% Plot results
-        h       = elf_plot_intSummary(intMean, meanImage, infoSum, para.plot, para.paths.dataset, length(fNames_im));
+        h       = elf_plot_intSummary(intMean, uint16(meanImage), infoSum, para.plot, para.paths.dataset, length(fNames_im));
         
         %% Save output to pdf and tif
         elf_io_readwrite(para, 'savemeanivep_jpg', '', h.fh);

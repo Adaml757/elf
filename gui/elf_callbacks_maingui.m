@@ -52,7 +52,7 @@ else
             end
             refresh = 0;
         case 'maingui_button2'
-            elf_main1_perScene(dataset, modules, imgformat, verbose);
+            elf_main1_perScene(dataset, modules, imgformat);
             refresh = 1;
         case 'maingui_button3'
             elf_main2_perEnvironment(dataset, modules, verbose);
@@ -66,7 +66,7 @@ else
             elf_main4_display(dataset, modules);
             refresh = 1;
         case 'maingui_buttonall'
-            elf_main1_perScene(dataset, modules, imgformat, verbose);
+            elf_main1_perScene(dataset, modules, imgformat);
             elf_main2_perEnvironment(dataset, modules, verbose);
             refresh = 1;
         case 'maingui_buttonexp'
