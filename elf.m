@@ -77,7 +77,7 @@ end
         elseif strcmp(get(src, 'tag'), 'file_reload')
             [para, status, gui] = elf_startup(modules, @maincb, '', verbose);
         else % any other button or key callback
-            [status, gui] = elf_callbacks_maingui(src, status, gui, para);
+            [status, gui] = elf_callbacks_maingui(modules, src, status, gui, para);
         end
     end
 

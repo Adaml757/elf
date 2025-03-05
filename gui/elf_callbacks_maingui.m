@@ -1,4 +1,4 @@
-function [status, gui] = elf_callbacks_maingui(src, status, gui, para)
+function [status, gui] = elf_callbacks_maingui(modules, src, status, gui, para)
 % ELF_CALLBACKS_MAINGUI deals with the callbacks of the ELF gui's buttons
 
 if strcmp(get(src, 'tag'), 'maingui_slider')
@@ -52,27 +52,27 @@ else
             end
             refresh = 0;
         case 'maingui_button2'
-            elf_main1_HdrAndInt(dataset, imgformat, verbose);
+            elf_main1_HdrAndInt(dataset, modules, imgformat, verbose);
             refresh = 1;
         case 'maingui_button3'
-            elf_main2_meanimage(dataset, verbose);
+            elf_main2_meanimage(dataset, modules, verbose);
             refresh = 1;
         case 'maingui_button4'
-            elf_main3_intsummary(dataset, imgformat);
+            elf_main3_intsummary(dataset, modules);
             refresh = 1;
         case 'maingui_button5'
             elf_gui_chooseext(fullfile(para.paths.root, dataset), false);
             refresh = 0;
         case 'maingui_button6'
-            elf_main4_display(dataset, imgformat);
+            elf_main4_display(dataset, modules);
             refresh = 1;
         case 'maingui_buttonall'
-            elf_main1_HdrAndInt(dataset, imgformat, verbose);
-            elf_main2_meanimage(dataset, verbose);
-            elf_main3_intsummary(dataset, imgformat);
+            elf_main1_HdrAndInt(dataset, modules, imgformat, verbose);
+            elf_main2_meanimage(dataset, modules, verbose);
+            elf_main3_intsummary(dataset, modules);
             refresh = 1;
         case 'maingui_buttonexp'
-            elf_mainX_explore(dataset, imgformat); % TODO use frange
+            elf_mainX_explore(dataset, modules); % TODO use frange
             refresh = 0;
         case 'maingui_range'
             refresh = 0;

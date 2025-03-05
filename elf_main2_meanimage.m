@@ -1,4 +1,4 @@
-function elf_main2_meanimage(dataSet, verbose)
+function elf_main2_meanimage(dataSet, modules, verbose)
 % ELF_MAIN2_MEANIMAGE calculates the mean image for an environment as the mean
 % of all normalised HDR scenes. Scenes are normalised in elf_main1 using the correctdng
 % "bright" method, which sets the mean luminance to 1/4 of maximum.
@@ -14,7 +14,8 @@ function elf_main2_meanimage(dataSet, verbose)
 %      +2.5s verbose
 
 %% Set up paths and file names
-if nargin < 2, verbose = false; end % verbose determines whether each individual image is plotted during the process, and thumbs are provided at the end
+if nargin < 3, verbose = false; end % verbose determines whether each individual image is plotted during the process, and thumbs are provided at the end
+if nargin < 2 , modules = {}; end
 if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
 
                     Logger.log(LogLevel.INFO, '\b\b\b\b\b\b\b\b\b\b\b\b\b\n');
@@ -23,7 +24,7 @@ if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset na
 
 %% Set up paths and file names; read info, infosum and para
 elf_paths;
-para            = elf_para({}, '', dataSet);                   % This function only uses para.paths, so we don't have to load the old para file, verbose==1 means there will be output during system check
+para            = elf_para(modules, '', dataSet);                   % This function only uses para.paths, so we don't have to load the old para file
 allFiles        = elf_io_dir(fullfile(para.paths.datapath, para.paths.scenefolder, '*.tif'));
 fNames_im       = {allFiles.name};                          % collect image names
 infoSum         = elf_io_readwrite(para, 'loadinfosum');      % loads the old infosum file (which contains projection information, and linims)

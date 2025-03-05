@@ -1,4 +1,4 @@
-function calc_wholefolder(rootFolder)
+function calc_wholefolder(rootFolder, modules)
 % CALC_WHOLEFOLDER is the "run all data over night" function for ELF. 
 % For each data folder inside the given rootFolder, it calculates:
 %   - the mean image
@@ -7,6 +7,7 @@ function calc_wholefolder(rootFolder)
 % If any errors occur, the program aborts calculation for that dataset and continues with the next one.
 % At the end of the run, a summary will be printed to the command line specifying any errors.
 
+if nargin < 2, modules = {}; end
 if nargin < 1, rootFolder = 'prompt'; end
 para             = elf_para({}, rootFolder, '', '', true);    
 [~, ~, datasets] = elf_checkdata(para);
@@ -17,9 +18,9 @@ for i = 1:length(datasets)
     fprintf('\n%d of %d\n', i, length(datasets));
     try
         dataset = datasets{i};
-        elf_main1_HdrAndInt(dataset); close all
-        elf_main2_meanimage(dataset); close all
-        elf_main3_intsummary(dataset); close all
+        elf_main1_HdrAndInt(dataset, modules); close all
+        elf_main2_meanimage(dataset, modules); close all
+        elf_main3_intsummary(dataset, modules); close all
         res(i) = 1;
     catch ME
         errors{i} = ME;

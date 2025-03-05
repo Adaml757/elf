@@ -1,4 +1,4 @@
-function elf_main3_intsummary(dataSet, imgFormat)
+function elf_main3_intsummary(dataSet, modules)
 % ELF_MAIN3_INTSUMMARY averages the intensity descriptors for an environment, 
 % plots the results, and saves the plot to jpg 
 %
@@ -14,7 +14,7 @@ function elf_main3_intsummary(dataSet, imgFormat)
 %       6s total
 
 %% check inputs
-if nargin < 2 || isempty(imgFormat), imgFormat = "*.dng"; end
+if nargin < 2 , modules = {}; end
 if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
 
                     Logger.log(LogLevel.INFO, '\b\b\b\b\b\b\b\b\b\b\b\b\b\n');
@@ -22,7 +22,7 @@ if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset na
 
 %% Set up paths and file names; read info, infosum and para
 elf_paths;
-para            = elf_para({}, '', dataSet, imgFormat);
+para            = elf_para(modules, '', dataSet);
 para            = elf_para_update(para);                                                               % Combine old parameter file with potentially changed information in current elf_para
 info            = elf_info_collect(fullfile(para.paths.datapath, para.paths.scenefolder), '*.tif');    % this contains tif exif information and filenames %%FIXME should be mat folder
 infoSum         = elf_io_readwrite(para, 'loadinfosum');                                               % loads the old infosum file (which contains projection information)

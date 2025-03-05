@@ -1,4 +1,4 @@
-function elf_main1_HdrAndInt(dataSet, imgFormat, verbose, rotation)
+function elf_main1_HdrAndInt(dataSet, modules, imgFormat, verbose)
 % ELF_MAIN1_HDRANDINT calibrates and unwarps all images in a data set, sorts them into
 % scenes, and calculates HDR representations of these scenes as mat for later contrast calculations and as tif for the mean image. 
 % Intensity descriptors are calculated for each exposure and then combined for scenes based on individual pixel reliability.
@@ -17,16 +17,16 @@ elf_paths;
 saveJpgs        = false;                                              % save individual jpgs for each image? (takes extra time)
 
 %% check inputs
-if nargin < 4, rotation = 0; end
-if nargin < 3, verbose = false; end
-if nargin < 2 || isempty(imgFormat), imgFormat = "*.dng"; end
+if nargin < 4, verbose = false; end
+if nargin < 3 || isempty(imgFormat), imgFormat = "*.dng"; end
+if nargin < 2 , modules = {}; end
 if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
 
                     Logger.log(LogLevel.INFO, '\n');
                     Logger.log(LogLevel.INFO, '----- ELF Step 1: Calibration, HDR and Intensity -----\n')
 
 %% Set up paths and file names; read info, infosum and para, calculate sets
-para            = elf_para({}, '', dataSet, imgFormat, verbose);
+para            = elf_para(modules, '', dataSet, imgFormat, verbose);
 info            = elf_info_collect(para.paths.datapath, imgFormat);   % this contains EXIF information and filenames, verbose==1 means there will be output during system check
 infoSum         = elf_info_summarise(info, false);                    % summarise EXIF information for this dataset. This will be saved for later use below
 infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linear images are used, correct for that during plotting
@@ -49,9 +49,9 @@ proj = Projector.fromInfoStructs(infoSum, cal.ProjectionInfo, para.azi, para.ele
 % Calculate a projection vector to transform an orthographic/equidistant/equisolid input image into an equirectangular output image
 % Also creates I_info.grids
 if para.stages.project
-    projection_ind = proj.calculateProjection(rotation);
+    projection_ind = proj.calculateProjection();
 end
-infoSum.grids = proj.getProjectionInfo(rotation);
+infoSum.grids = proj.getProjectionInfo();
 elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
 
 %% Step 1: Unwarp images and calculate HDR scenes

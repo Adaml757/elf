@@ -1,4 +1,4 @@
-function elf_mainX_explore(dataset, imgformat, frange, verbose)
+function elf_mainX_explore(dataset, modules, frange, verbose)
 % ELF_MAINX_EXPLORE shows a montage of all scenes, and the mean image for a processed ELF data set
 
 % Loads files: *.mat files in data folder, *.tif files in data/proj folder
@@ -6,7 +6,7 @@ function elf_mainX_explore(dataset, imgformat, frange, verbose)
 %% Set up paths and file names
 if nargin < 4 || isempty(verbose), verbose = false; end
 if nargin < 3 || isempty(frange), frange = []; end
-if nargin < 2 || isempty(imgformat), imgformat = "*.dng"; end
+if nargin < 2, modules = {}; end
 
 %%
 fprintf('----- ELF Step X: Explore -----\n');
@@ -17,7 +17,7 @@ res.calib       = strcmp(imgformat, "*.dng");
 
 %% Set up paths and file names; read info, infosum and para
 elf_paths;
-para            = elf_para({}, '', dataset, imgformat);
+para            = elf_para(modules, '', dataset, imgformat);
 para            = elf_para_update(para);     
 infosum         = elf_io_readwrite(para, 'loadinfosum');                 % loads the old infosum file (which contains projection information)
 allfiles        = elf_io_dir(fullfile(para.paths.datapath, para.paths.scenefolder, '*.tif'));
