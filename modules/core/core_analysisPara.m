@@ -2,6 +2,9 @@ function anaP = core_analysisPara(d)
 
 anaParameters = ...
     {'RESOLUTION_BOOSTER', 'double';
+     'CALCULATE_INT', 'logical';
+     'CALCULATE_MEAN_IMAGE', 'logical';
+     'SAVE_SCENE_TIFS', 'logical';
      'TARGET_PROJECTION', 'string';
      'TARGET_AZI_RANGE', 'doublevector';
      'TARGET_ELE_RANGE', 'doublevector';

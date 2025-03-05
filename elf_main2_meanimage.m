@@ -73,9 +73,6 @@ if verbose
     res.data = elf_io_readwrite(para, 'loadres', fNames_im);
     
     
-    
-%     res.calib = infosum.linims;
-    
     set(hi2, 'ButtonDownFcn', @elf_callbacks_montage, 'UserData', res);
 end
 

@@ -76,12 +76,12 @@ elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for
 tic; % Start taking time
 
 % Process one scene at a time
-for iSet = 1:size(sets, 1)
+for iScene = 1:size(sets, 1)
     clear im_filt res
     
-    setStart    = sets(iSet, 1);          % first image in this set
-    setEnd      = sets(iSet, 2);          % last image in this set
-    nIms        = setEnd - setStart + 1;  % total number of images in this set
+    setStart    = sets(iScene, 1);        % first image in this scene
+    setEnd      = sets(iScene, 2);        % last image in this scene
+    nIms        = setEnd - setStart + 1;  % total number of images in this scene
 
     im_proj     = zeros(projSize(1), projSize(2), projSize(3), nIms);  % pre-allocate
     conf_proj   = im_proj;  % pre-allocate
@@ -94,11 +94,7 @@ for iSet = 1:size(sets, 1)
         fName                   = info(imNo).Filename;  % full path to input image file
         im_raw                  = double(elf_io_imread(fName)); % load the image (uint16) and transform to double
 
-        %% TODO: Black out horizon if needed
-        if isfield(para.ana, "blackoutRadius")
-            im_raw = Projector.blackout(im_raw, para.ana.blackoutRadius);
-        end
-        %% %%%%%%%%%
+        
  
         % Calibrate and calculate intensity confidence
         [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
@@ -125,55 +121,45 @@ for iSet = 1:size(sets, 1)
     % However, MATLAB can't currently deal with saving these large figures, so no pdf will be created either way.
     im_HDR      = elf_hdr_calcHDR(im_proj, conf_proj, para.ana.hdrMethod, rawWhiteLevels); % para.ana.hdrMethod can be 'overwrite', 'overwrite2', 'validranges', 'allvalid', 'allvalid2' (default), 'noise', para.ana.hdrMethod    
     im_HDR_cal  = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
-    I           = elf_io_correctdng(im_HDR_cal, info(setStart), 'bright');
+    
+    %% TODO: Black out horizon if needed
+    if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "blackoutRadius") && para.ana.blackoutRadius>0
+        im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.blackoutRadius);
+    end
+    %% %%%%%%%%%
+    
 
     % Save HDR file as MAT and TIF.
     % TIF is not strictly necessary, but a good diagnostic. 
     % Cost of saving it: ~300GB/6TB disk space, 2s per scene for calculation/saving = 6.7h extra for the current ~12000 scenes.
     % Cost of instead recalculating it in main2: 1.5s per scene for loading/converting = 5h extra ".
-    elf_io_readwrite(para, 'saveHDR_mat', sprintf('scene%03d', iSet), im_HDR_cal);
-    if para.saveSceneTifs
-        elf_io_readwrite(para, 'saveHDR_tif', sprintf('scene%03d', iSet), I);
+    elf_io_readwrite(para, 'saveHDR_mat', sprintf('scene%03d', iScene), im_HDR_cal);
+    I = elf_io_correctdng(im_HDR_cal, info(setStart), 'bright');
+
+    if para.ana.saveSceneTifs
+        elf_io_readwrite(para, 'saveHDR_tif', sprintf('scene%03d', iScene), I);
     end
 
-    %% Intensity descriptors %%
-    if para.stages.calculateInt  %% TODO: Move this into a "per_scene" function for the CORE module
-        %% Calculate intensity descriptors
-        switch para.ana.intAnalysisType
-            case 'histcomb' % Calculate histograms for each exposure and combine using conf
-                error('Currently not supported!')
-    %             [res.int, res.totalint] = elf_analysis_int(im_proj_cal, para.ele2, 'histcomb', para.ana.hdivnInt, para.ana.rangePerc, setnr==1, conf_proj, confFactors); % verbose output (analysis parameters) only for the first set
-            case 'hdr' % Calculate histograms from HDR image (current default in para)
-                [res.int, res.totalint] = elf_analysis_int(im_HDR_cal, para.ele2(1):para.ele2(2):para.ele2(3), 'hdr', para.ana.hdivnInt, para.ana.rangePerc, iSet==1); % verbose output (analysis parameters) only for the first set
-            otherwise
-                error('Unknown intensity calculation method: %s', para.ana.intAnalysisType);
+    %% Perform per-scene analysis and plotting for all modules
+    res.info = info(setStart);
+    for i = 1:length(modules)
+        modPerSceneFilename = [modName '_perScene'];
+        if ~isempty(which(modPerSceneFilename))
+            res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, iScene, size(sets, 1));
         end
-    
-        %% Plot summary figure for this scene
-        dataSetName = strrep(para.paths.dataset, '\', '\\'); % On PC, paths contain backslashes. Replace them by double backslashes to avoid a warning
-        nScenes     = size(sets, 1);
-        name        = sprintf('%s, scene #%d of %d', dataSetName, iSet, nScenes);
-        h           = elf_plot_intSummary(res, I, infoSum, para.plot, name, nScenes);
-    
-    %     info2 = sprintf('%d exposure, exposure m.a.d %.0f%% (max %.0f%%)', numims, 100*mean(abs(res.scalefac-1)), 100*max(abs(res.scalefac-1)) );
-        set(h.fh, 'Name', sprintf('Scene #%d of %d', iSet, nScenes));
-        drawnow;
-        
-        %% save output files
-        res.info  = info(setStart); % use the info of the first read image
-        sceneName = sprintf('scene%03d', iSet);
-        elf_io_readwrite(para, 'saveres', sceneName, res);
-        if saveJpgs, elf_io_readwrite(para, 'saveivep_jpg', [sceneName '_int'], h.fh); end    % small bottleneck
     end
-    
-    
-                    if iSet == 1
-                        Logger.log(LogLevel.INFO, '\tStarting scene-by-scene calibration, HDR creation and intensity analysis. Projected time: %.2f minutes.\n', toc/60*size(sets, 1));
+
+    %% save results output files
+    sceneName = sprintf('scene%03d', iScene);
+    elf_io_readwrite(para, 'saveres', sceneName, res);
+
+                    if iScene == 1
+                        Logger.log(LogLevel.INFO, '\tStarting scene-by-scene calibration, HDR creation and analysis. Projected time: %.2f minutes.\n', toc/60*size(sets, 1));
                         Logger.log(LogLevel.INFO, '\tScene: 1..');
-                    elseif mod(iSet-1, 20)==0
-                        Logger.log(LogLevel.INFO, '\n\t%d..', iSet);
+                    elseif mod(iScene-1, 20)==0
+                        Logger.log(LogLevel.INFO, '\n\t%d..', iScene);
                     else
-                        Logger.log(LogLevel.INFO, '\b%d..', iSet);
+                        Logger.log(LogLevel.INFO, '\b%d..', iScene);
                     end
 end
 
