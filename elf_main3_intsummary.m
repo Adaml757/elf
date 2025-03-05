@@ -42,7 +42,7 @@ elf_analysis_writestats(intMean, para.paths.fname_stats);
 meanIm  = elf_io_readwrite(para, 'loadmeanimg_tif');
 
 %% Plot results
-h       = elf_plot_intSummary(intMean, meanIm, infoSum, para.paths.dataset, length(info));
+h       = elf_plot_intSummary(intMean, meanIm, infoSum, para.plot, para.paths.dataset, length(info));
 
 %% Save output to pdf and tif
 elf_io_readwrite(para, 'savemeanivep_jpg', '', h.fh);

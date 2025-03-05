@@ -1,7 +1,4 @@
-function [h, p] = elf_plot_createFigure()
-
-%% parameters
-p               = elf_plottingPara;
+function [h, p] = elf_plot_createFigure(p)
 
 switch p.version
     case 0.2

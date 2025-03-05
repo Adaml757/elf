@@ -28,7 +28,7 @@ allFiles        = elf_io_dir(fullfile(para.paths.datapath, para.paths.scenefolde
 fNames_im       = {allFiles.name};                          % collect image names
 infoSum         = elf_io_readwrite(para, 'loadinfosum');      % loads the old infosum file (which contains projection information, and linims)
 
-para.stages.project = false;
+para.stages.project = true;
 
 %% Calculate mean image and thumbs
 if para.stages.project

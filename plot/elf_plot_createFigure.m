@@ -1,12 +1,4 @@
-function [h, p] = elf_plot_createFigure()
-
-%% parameters
-p                  = elf_plottingPara;
-
-if p.version==0.1
-    [h, p] = elf_plot_createFigure_v0p1;
-    return
-end
+function [h, p] = elf_plot_createFigure(p)
 
 [h.fh, p.corrFac]  = elf_support_formatA4strip(35); clf;
 set(h.fh, 'Name', 'Environmental Light Field');

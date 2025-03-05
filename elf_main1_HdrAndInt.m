@@ -34,11 +34,11 @@ sets            = elf_hdr_brackets(info);                             % determin
                     Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(sets, 1), dataSet);
 
 para.stages.calibrate = true;
-para.stages.project = false;
+para.stages.project = true;
 para.stages.stitch = false;
 para.stages.filter = true;
-para.stages.calculateInt = false;
-para.saveSceneTifs = false;
+para.stages.calculateInt = true;
+para.saveSceneTifs = true;
 
 %% Calculate black levels for all images (from calibration or dark images)
 [info, ~, infoSum.blackWarnings] = Calibrator.calculateBlackLevels(info, imgFormat);
@@ -145,7 +145,7 @@ for iSet = 1:size(sets, 1)
         dataSetName = strrep(para.paths.dataset, '\', '\\'); % On PC, paths contain backslashes. Replace them by double backslashes to avoid a warning
         nScenes     = size(sets, 1);
         name        = sprintf('%s, scene #%d of %d', dataSetName, iSet, nScenes);
-        h           = elf_plot_intSummary(res, I, infoSum, name, nScenes);
+        h           = elf_plot_intSummary(res, I, infoSum, para.plot, name, nScenes);
     
     %     info2 = sprintf('%d exposure, exposure m.a.d %.0f%% (max %.0f%%)', numims, 100*mean(abs(res.scalefac-1)), 100*max(abs(res.scalefac-1)) );
         set(h.fh, 'Name', sprintf('Scene #%d of %d', iSet, nScenes));
