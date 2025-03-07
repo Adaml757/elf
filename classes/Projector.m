@@ -34,7 +34,7 @@ classdef Projector
             %
             % Also see: Projector.fromInfoStructs, Projector.fromImageCircle
 
-            obj.Size = imSize;
+            obj.Size = imSize(:)'; % make sure size is always a row vector
             obj.ProjectionType = projectionType;
 
             if nargin<3 || isempty(erAzi), erAzi = [-90, 0.1, 90]; end
@@ -319,6 +319,8 @@ classdef Projector
             % It is also possible to retain the same projection but resize the image.
             % This function uses a simple nearest-neighbour strategy; there is no interpolation.
             % Also creates a Projector object for the new image projection.
+
+            if nargin<4 || isempty(rotation), rotation=0; end
 
             newProjector = Projector(imSize_new, projectionType_new);
 
