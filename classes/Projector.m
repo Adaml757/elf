@@ -57,7 +57,7 @@ classdef Projector
                 % set pixPerMM to create a filled image
                 shortSide = min(imSize(1:2));
                 imageCircleRadius = obj.theta2r(90);
-                pixPerMM = shortSide / 2 / imageCircleRadius;
+                pixPerMM = (shortSide-1) / 2 / imageCircleRadius; % shortSide-1 is needed to put 90/-90 degrees exactly on the middle (not the outer edge) of the outermost pixel
             end
             obj.PixPerMM = pixPerMM;
         end
@@ -298,7 +298,8 @@ classdef Projector
         end
 
         function projection_ind = calculateProjection(obj, rotation)
-            % CALCULATEPROJECTION creates a projection index vector to transform a fisheye image into a equirectangular (azimuth/elevation) grid
+            % CALCULATEPROJECTION creates a projection index vector to transform a fisheye image into an equirectangular (azimuth/elevation) grid
+            % using nearest-neighbour interpolation
             %
             % Outputs:
             % projection_ind  - projections index matrix. The projected image can be calculated as im_proj = im(projection_ind)
@@ -374,7 +375,7 @@ classdef Projector
         end
 
         function im_fisheye = fastBackProjection(obj, im, rotation, method)
-            % FASTBACKPROJECTION takes an equirectangular image and project it back to an equisolid fisheye image.
+            % FASTBACKPROJECTION takes an equirectangular image and projects it back to an equisolid fisheye image.
             %
             % Inputs:
             % im             - MxNxC double, the equirectangular image to be transformed
