@@ -381,8 +381,9 @@ classdef Projector
             % im             - MxNxC double, the equirectangular image to be transformed
             % azi, ele       - Azimuth/elevation vectors IN DEGREES defining the x and y axes of im, respectively
             % rotation       - Angle (in degrees) by which the image should be rotated before processing (Use 90 or -90 for portrait images)
-            % method         - 'interpolate' (default): projects each equirectangular pixel into fisheye space, and then interpolates using griddata
-            %                  'nearestneighbour':      projects each fisheye pixel onto equirectangular space, and them samples the nearest pixel
+            % method         - method to use in griddata ("linear"/"nearest"/"natural"/"cubic"/"v4")
+            %                  to use old "nearestneighbour" method, use
+            %                  obj.calculateBackProjection and Projector.apply
             %
             % Outputs:
             % im_proj        - Output fisheye image
@@ -392,29 +393,22 @@ classdef Projector
             azi = obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3);
             ele = obj.ErEle(1):obj.ErEle(2):obj.ErEle(3);
 
-            switch method
-                case {'interpolate', 'interp', 'default'}
-                    [azi_grid, ele_grid]    = meshgrid(azi, ele);  % grid of desired angles
-                    [w_im, h_im]            = obj.rect2pix(azi_grid, ele_grid, -rotation);
-                    [w_grid, h_grid]        = meshgrid(1:obj.Size(2), 1:obj.Size(1));   % grid of desired output pixels
+            [azi_grid, ele_grid]    = meshgrid(azi, ele);  % grid of desired angles
+            [w_im, h_im]            = obj.rect2pix(azi_grid, ele_grid, -rotation);
+            [w_grid, h_grid]        = meshgrid(1:obj.Size(2), 1:obj.Size(1));   % grid of desired output pixels
 
-                    im_fisheye              = zeros(obj.Size); % pre-allocate
-                    for ch = 1:obj.Size(3) % for each channel
-                        thisch               = im(:, :, ch);
-                        warning('off', 'MATLAB:griddata:DuplicateDataPoints');
-                        im_fisheye(:, :, ch) = griddata(h_im(:), w_im(:), thisch(:), h_grid, w_grid, 'cubic'); %#ok<GRIDD>
-                        warning('on', 'MATLAB:griddata:DuplicateDataPoints');
+            im_fisheye              = zeros(obj.Size); % pre-allocate
+            for ch = 1:obj.Size(3) % for each channel
+                thisch               = im(:, :, ch);
+                warning('off', 'MATLAB:griddata:DuplicateDataPoints');
+                im_fisheye(:, :, ch) = griddata(h_im(:), w_im(:), thisch(:), h_grid, w_grid, method); %#ok<GRIDD>
+                warning('on', 'MATLAB:griddata:DuplicateDataPoints');
 
-                        %% Alternative: scatteredInterpolant version, which is a LOT slower (~10x), but gives the same results
-                        %             F = scatteredInterpolant(y_im(:), x_im(:), thisch(:));
-                        %             im_fisheye(:, :, ch) = F(y_grid, x_grid);
-                    end
-                    im_fisheye = obj.blackout(im_fisheye); % set points beyond 90 degrees to 0
-                case {'nearestneighbour', 'nn', 'nearestpixel'}
-                    projection_ind           = obj.calculateBackProjection(rotation);
-                    im_temp                  = Projector.apply(im, projection_ind, obj.Size);
-                    im_fisheye               = obj.blackout(im_temp);
+                %% Alternative: scatteredInterpolant version, which is a LOT slower (~10x), but gives the same results
+                %             F = scatteredInterpolant(y_im(:), x_im(:), thisch(:));
+                %             im_fisheye(:, :, ch) = F(y_grid, x_grid);
             end
+            im_fisheye = obj.blackout(im_fisheye); % set points beyond 90 degrees to 0
         end
 
         function im = blackout(obj, im, excLimit, zeroValue)
