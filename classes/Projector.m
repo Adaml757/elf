@@ -374,6 +374,33 @@ classdef Projector
             Logger.log(LogLevel.INFO, '\bdone.\n');
         end
 
+        function im_rect = fastProjection(obj, im, rotation, method)
+            % TODO
+            
+            if nargin < 4 || isempty(method), method = 'linear'; end
+            if nargin < 3 || isempty(rotation), rotation = 0; end
+            azi = obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3);
+            ele = obj.ErEle(1):obj.ErEle(2):obj.ErEle(3);
+            [azi_grid, ele_grid]     = meshgrid(azi, ele);  % grid of desired angles
+
+            [w_grid, h_grid]         = meshgrid(1:obj.Size(2), 1:obj.Size(1)); % grid of desired output image coordinates
+            [target_azi, target_ele] = obj.pix2rect(w_grid, h_grid, rotation);
+            % remove out-of-bounds azi and ele pairs
+            sel                      = target_azi>max(azi) | target_azi<min(azi) | target_ele>max(ele) | target_ele<min(ele) | isnan(target_azi) | isnan(target_ele);
+
+            im_rect              = zeros(obj.RectSize); % pre-allocate
+            for ch = 1:obj.Size(3) % for each channel
+                thisch               = im(:, :, ch);
+                warning('off', 'MATLAB:griddata:DuplicateDataPoints');
+                im_rect(:, :, ch) = griddata(target_azi(~sel), target_ele(~sel), thisch(~sel), azi_grid, ele_grid, method); %#ok<GRIDD>
+                warning('on', 'MATLAB:griddata:DuplicateDataPoints');
+
+                %% Alternative: scatteredInterpolant version, which is a LOT slower (~10x), but gives the same results
+                %             F = scatteredInterpolant(y_im(:), x_im(:), thisch(:));
+                %             im_fisheye(:, :, ch) = F(y_grid, x_grid);
+            end
+        end
+
         function im_fisheye = fastBackProjection(obj, im, rotation, method)
             % FASTBACKPROJECTION takes an equirectangular image and projects it back to an equisolid fisheye image.
             %
@@ -388,7 +415,7 @@ classdef Projector
             % Outputs:
             % im_proj        - Output fisheye image
 
-            if nargin < 4 || isempty(method), method = 'default'; end
+            if nargin < 4 || isempty(method), method = 'linear'; end
             if nargin < 3 || isempty(rotation), rotation = 0; end
             azi = obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3);
             ele = obj.ErEle(1):obj.ErEle(2):obj.ErEle(3);
