@@ -191,18 +191,18 @@ toc7 = toc;
 
 % 8
 tic
-im_reproj1                    = proj.fastBackProjection(im_proj2, -45);
+im_reproj1                    = proj.interpolatedBackProjection(im_proj2, -45);
 toc8 = toc;
 
 % 9
 tic
-im_reproj2                    = proj2.fastBackProjection(im_proj4, 0);
+im_reproj2                    = proj2.interpolatedBackProjection(im_proj4, 0);
 im_reproj2(isnan(im_reproj2)) = 0;
 toc9 = toc;
 
 % 10
 tic
-im_reproj3                    = proj2.fastBackProjection(im_proj4, 45);
+im_reproj3                    = proj2.interpolatedBackProjection(im_proj4, 45);
 im_reproj3(isnan(im_reproj3)) = 0;
 toc10 = toc;
 

@@ -90,8 +90,8 @@ for iScene = 1:size(sets, 1)
         [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
         
         % Reproject/Resize/Crop image
-        im_proj(:, :, :, i) = Projector.apply(im_cal, projection_ind, projSize(:)');
-        conf_proj(:, :, :, i)   = Projector.apply(conf, projection_ind, projSize(:));
+        im_proj(:, :, :, i) = Projector.apply(im_cal, projection_ind, projSize);
+        conf_proj(:, :, :, i)   = Projector.apply(conf, projection_ind, projSize);
         %         im_proj_cal(:, :, :, i) = cal.applySpectral(im_proj(:, :, :, i), info(imnr), para.ana.colourCalibType); % only needed for 'histcomb'-type intensity calculation, but not time-intensive
 
     end
