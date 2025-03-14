@@ -1,26 +1,31 @@
 classdef Projector
     % PROJECTOR provides methods to change the projection of fisheye images
     %
+    % Each Projector object represents one fisheye projection (defined by the projection type, image size, focal length and chip pixel density), 
+    % and a corresponding equirectangular projection (defined by the azimuth and elevation vectors describing its two dimensions).
+    % When an image is projected into a different fisheye projection (i.e. generally, a different type or image size), a new Projector object is generated.
+    %
     % Call sequence: elf -> elf_main1_perScene -> Projector
     %
     % See also: Calibrator
 
     properties(SetAccess=immutable)
-        Size                  % [height, width, number of channels] of the original fisheye image
-        ProjectionType        % type of fisheye projection in the original image, e.g. "equisolid"
-        ErAzi                 % azimuth vector (as [start step end]) for the equirectangular projection; e.g. -90:0.1:90
-        ErEle                 % elevation vector (as [start step end]) for the equirectangular projection; e.g. 90:-0.1:-90
-        MidPoint              % image centre in h/w
-        PixPerMM              % pixel density (assumed to be equal in both dimensions) of the chip
-        CorrFocalLength       % the "effective" focal length (real focal length * a correction factor to match the observed image circle)
+        Size(1,3) double             % [height, width, number of channels] of the original fisheye image
+        ProjectionType(1,1) string   % type of fisheye projection in the original image, e.g. "equisolid"
+        ErAzi(1,3) double            % azimuth vector (as [start step end]) for the equirectangular projection; e.g. -90:0.1:90
+        ErEle(1,3) double            % elevation vector (as [start step end]) for the equirectangular projection; e.g. 90:-0.1:-90
+        MidPoint(1,2) double         % image centre in h/w
+        PixPerMM(1,1) double         % pixel density (assumed to be equal in both dimensions) of the chip
+        CorrFocalLength(1,1) double  % the "effective" focal length (real focal length * a correction factor to match the observed image circle)
     end
 
     properties(Dependent,Transient)
-        RectSize              % [H,W,C] size of the equirectangular image
+        RectSize(1,3) double         % [height, width, number of channels] size of the equirectangular image
     end
     
     methods
         function s = get.RectSize(obj)
+            % GET function for the RectSize property
             s = [floor((obj.ErEle(3)-obj.ErEle(1))/obj.ErEle(2)+1), floor((obj.ErAzi(3)-obj.ErAzi(1))/obj.ErAzi(2)+1), obj.Size(3)];
         end
     end
@@ -30,7 +35,8 @@ classdef Projector
     %%%%%%%%%%%%%%%%%%
     methods
         function obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength)
-            %PROJECTOR Construct an instance of this class directly
+            % PROJECTOR Construct an instance of this class directly
+            % obj = Projector(imSize, projectionType, [erAzi, erEle, midPoint, pixPerMM, corrFocalLength])
             %
             % Also see: Projector.fromInfoStructs, Projector.fromImageCircle
 
@@ -44,7 +50,7 @@ classdef Projector
             obj.ErEle = erEle;
 
             if nargin<5 || isempty(midPoint)
-                midPoint = [(imSize(1)+1)/2; (imSize(2)+1)/2];
+                midPoint = [(imSize(1)+1)/2, (imSize(2)+1)/2];
             end
             obj.MidPoint = midPoint;
 
@@ -118,9 +124,11 @@ classdef Projector
         end
     end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% PROJECTION CORE FUNCTIONS %%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% FISHEYE PROJECTION CORE FUNCTIONS %%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % These functions convert the angle theta of a point against the optical axis to a radial distance R in mm on the chip, and vice versa
+
     methods
         function theta_deg = r2theta(obj, R_mm)
             %PROJECTOR.R2THETA transforms R (the radial excentricity of a point on the chip in mm) to theta (the excentricity angle in degrees)
@@ -155,24 +163,35 @@ classdef Projector
         end
     end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% RE-PROJECTION FUNCTIONS %%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% PIXEL PROJECTION FUNCTIONS %%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % These functions translate pixel position between fisheye image pixels (PIX: w/h), equirectangular image angles (RECT: azi/ele) and 3D cartesian vector coordinates (CART: X/Y/Z)
+    %
+    % Available functions:
+    %   PIX2CART
+    %   PIX2RECT
+    %   PIX2PIX
+    %   CART2PIX
+    %   RECT2PIX
+    %
+    % Not available:
+    %   CART2RECT -> use built-in cart2sph and rad2deg
+    %   RECT2CART -> use built-in sph2cart and deg2rad
 
     % Input/Outputs for all methods
-    % w, h     - x/y image coordinatesin pixels, e.g. defining the desired grid of a projected image along image width and height, respectively
-    % X, Y, Z  - cartesian coordinates in arbitrary units, e.g. on a unit sphere surrounding the camera
-    % azi, ele - azimuth/elevation in degrees
-    % rotation - angle (in degrees) by which the image should be rotated clockwise around the optical axis before processing (Use 90 or -90 for portrait images)
+    %   w, h     - x/y image coordinatesin pixels, e.g. defining the desired grid of a projected image along image width and height, respectively
+    %   X, Y, Z  - cartesian coordinates in arbitrary units, e.g. on a unit sphere surrounding the camera
+    %   azi, ele - azimuth/elevation in degrees
+    %   rotation - angle (in degrees) by which the image should be rotated clockwise around the optical axis before processing (Use 90 or -90 for portrait images)
     
-    methods
+    methods        
         function [X, Y, Z] = pix2cart(obj, w, h, rotation)
             % PIX2CART translates w/h pixel positions into X,Y,Z on a unit sphere
             %
             % Usage example:
             % [w_grid, h_grid] = meshgrid(1:I_info.Width, 1:I_info.Height);
             % [X, Y, Z] = obj.pix2cart(w_grid, h_grid)
-
             %% TODO: ADD a vector for the optical axis (and one for orientation?)
 
             if nargin<4 || isempty(rotation), rotation=0; end
@@ -247,12 +266,34 @@ classdef Projector
         end
 
         function [w2, h2] = pix2pix(obj, targetProjector, w, h, rotation)
-            % TODO: Docs
+            % PIX2PIX translates w/h pixel positions from one fisheye projection to another
+
             if nargin<5 || isempty(rotation), rotation=0; end
             [X, Y, Z]    = obj.pix2cart(w, h, rotation);
             [w2, h2]     = targetProjector.cart2pix(X, Y, Z);
         end
+    end
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% IMAGE PROJECTION FUNCTIONS %%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % These functions reproject images between various fisheye/equirectangular projections
+    % 
+    % Efficient nearest-neighbour-interpolation functions:
+    %   (These functions return a projection index vector that can then be used with Projector.apply to reproject any number of images.
+    %   The costly part of the calculation therefore only needs to be done once.)
+    %   CALCULATEPROJECTION
+    %   FISHEYETOFISHEYEPROJECTION
+    %   CROPTOIMAGECIRCLE
+    %   CALCULATEBACKPROJECTION
+    %
+    % More accurate interpolation functions:
+    %   (These functions use griddata to perform linear/cubic interpolation during reprojection. This can not be done with an index vector, 
+    %   so the costly part of the calculation has to be recone for each image.)
+    %   INTERPOLATEDPROJECTION
+    %   INTERPOLATEDBACKPROJECTION
+
+    methods
         function grids = getProjectionInfo(obj, rotation)
             % GETPROJECTIONINFO creates the grids for plotting on top of the fisheye and equirectangular image
             %
@@ -374,9 +415,19 @@ classdef Projector
             Logger.log(LogLevel.INFO, '\bdone.\n');
         end
 
-        function im_rect = fastProjection(obj, im, rotation, method)
-            % TODO
-            
+        function im_rect = interpolatedProjection(obj, im, rotation, method)
+            % INTERPOLATEDPROJECTION takes a fisheye image and projects it to an equirectangular image using interpolation.
+            %
+            % Inputs:
+            % im       - MxNxC double, the fisheye image to be transformed
+            % rotation - Angle (in degrees) by which the image should be rotated before processing (Use 90 or -90 for portrait images)
+            % method   - method to use in griddata ("linear"/"nearest"/"natural"/"cubic"/"v4")
+            %            to use old "nearestneighbour" method, use
+            %            obj.calculateBackProjection and Projector.apply
+            %
+            % Outputs:
+            % im_rect  - Output equirectangular image
+
             if nargin < 4 || isempty(method), method = 'linear'; end
             if nargin < 3 || isempty(rotation), rotation = 0; end
             azi = obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3);
@@ -401,19 +452,18 @@ classdef Projector
             end
         end
 
-        function im_fisheye = fastBackProjection(obj, im, rotation, method)
-            % FASTBACKPROJECTION takes an equirectangular image and projects it back to an equisolid fisheye image.
+        function im_fisheye = interpolatedBackProjection(obj, im, rotation, method)
+            % INTERPOLATEDBACKPROJECTION takes an equirectangular image and projects it back to a fisheye image using interpolation.
             %
             % Inputs:
-            % im             - MxNxC double, the equirectangular image to be transformed
-            % azi, ele       - Azimuth/elevation vectors IN DEGREES defining the x and y axes of im, respectively
-            % rotation       - Angle (in degrees) by which the image should be rotated before processing (Use 90 or -90 for portrait images)
-            % method         - method to use in griddata ("linear"/"nearest"/"natural"/"cubic"/"v4")
-            %                  to use old "nearestneighbour" method, use
-            %                  obj.calculateBackProjection and Projector.apply
+            % im         - MxNxC double, the equirectangular image to be transformed
+            % rotation   - Angle (in degrees) by which the image should be rotated before processing (Use 90 or -90 for portrait images)
+            % method     - method to use in griddata ("linear"/"nearest"/"natural"/"cubic"/"v4")
+            %              to use old "nearestneighbour" method, use
+            %              obj.calculateBackProjection and Projector.apply
             %
             % Outputs:
-            % im_proj        - Output fisheye image
+            % im_fisheye - Output fisheye image
 
             if nargin < 4 || isempty(method), method = 'linear'; end
             if nargin < 3 || isempty(rotation), rotation = 0; end
@@ -443,7 +493,7 @@ classdef Projector
             % Inputs:
             % im        - MxNxC double, the fisheye image to be transformed
             % excLimit  - default: 90; excentricity limit in degrees; any value with a greater excentricity (angle to the optiocal axis) 
-            %               than this will be set to zeroValue
+            %             than this will be set to zeroValue
             % zeroValue - default: 0; zero value: any value with a greater excentricity than excLimit this will be set to this value
             %
             % Outputs:
