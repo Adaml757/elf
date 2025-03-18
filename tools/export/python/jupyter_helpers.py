@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from typing import Optional, Union
 import numpy as np
 
-def display_img(img: Union[np.ndarray, list], cmap: str = 'gray', figsize: tuple = (10,2), axtitle: Union[str, list] = "", figtitle: str = '') -> None:
+def display_img(img: Union[np.ndarray, list], cmap: str = 'gray', figsize: tuple = (10,2), axtitle: Union[str, list] = "", figtitle: str = '', grid = []) -> None:
     """Display one or more images in a large-enough window in a jupyter notebook
 
     Args:
@@ -38,6 +38,7 @@ def display_img(img: Union[np.ndarray, list], cmap: str = 'gray', figsize: tuple
     for i, I in enumerate(imglist):
         ax = fig.add_subplot(1, len(imglist), i+1)
         ax.imshow(I, cmap=cmap)
+        ax.plot(grid["x"], grid["y"], "k:")
         if axtitlelist[i]:
             plt.title(axtitlelist[i])
             # ax.set_title(axtitlelist[i])
