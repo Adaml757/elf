@@ -104,7 +104,7 @@ switch action
         
     case 'saveinfosum'      % elf_io_readwrite(para, 'saveinfosum', [], infosum)
         %% save the infosum structure for this environment, containing common EXIF information; also saves para
-        save(para.paths.fname_infosum_mat, 'varinput', 'para');
+        save(para.paths.fname_infosum_mat, 'varinput', 'para', '-v7.3');
         
     case 'loadinfosum'      % infosum = elf_io_readwrite(para, 'loadinfosum')
         %% load the infosum structure for this environment, containing common EXIF information
@@ -114,7 +114,7 @@ switch action
     case 'saveinfosum_comb'      % elf_io_readwrite(para, 'saveinfosum', [], infosum)
         %% save the infosum structure for this environment, containing common EXIF information; also saves para
         [~, ds] = fileparts(para.paths.dataset);
-        save(fullfile(para.paths.outputfolder, ds+"_info.mat"), 'varinput', 'para');
+        save(fullfile(para.paths.outputfolder, ds+"_info.mat"), 'varinput', 'para', '-v7.3');
         
     case 'loadinfosum_comb'      % infosum = elf_io_readwrite(para, 'loadinfosum')
         %% load the infosum structure for this environment, containing common EXIF information
@@ -148,7 +148,7 @@ switch action
         %% saves the projected, calibrated image for one exposure to a mat file
         [~,f]       = fileparts(fname); 
         fname       = fullfile(para.paths.datapath, para.paths.projfolder, f+".mat");
-        save(fname, 'varinput');
+        save(fname, 'varinput', '-v7.3');
         
     case 'loadproj_mat'     % im_proj = elf_io_readwrite(para, 'loadproj_mat', fname)
         %% loads the projected, calibrated image for one exposure from a mat file
@@ -161,7 +161,7 @@ switch action
         %% saves the HDR image for one scene in a mat file
         [~,f]       = fileparts(fname);
         fname       = fullfile(para.paths.datapath, para.paths.scenefolder, f+".mat");
-        save(fname, 'varinput');
+        save(fname, 'varinput', '-v7.3');
 
     case 'loadHDR_mat'      % data = elf_io_readwrite(para, 'loadHDR_mat', sprintf('scene%03d', setnr))
         %% loads the HDR image for one scene from a mat file
@@ -189,7 +189,7 @@ switch action
         [~,f]       = fileparts(fname); 
         fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, f+"_filt.mat");
         im_filt_HDR = varinput; % this is only necessary for backward compatibility. TODO: refilter all datasets so they contain varinput instead of im_filt_HDR
-        save(fname_filt, 'im_filt_HDR');
+        save(fname_filt, 'im_filt_HDR', '-v7.3');
                             Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname);
                             
     case 'loadfilt_mat'     % im_filt = elf_io_readwrite(para, 'loadfilt_mat', sprintf('scene%03d', setnr))
@@ -214,7 +214,7 @@ switch action
         [~, f]      = fileparts(fname); 
         fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, f+"_stokes_filt.mat");
         imStokes_filt = varinput;  % this is only necessary for backward compatibility. TODO: refilter all datasets so they contain varinput instead of im_filt_HDR
-        save(fname_filt, 'imStokes_filt');
+        save(fname_filt, 'imStokes_filt', '-v7.3');
                             Logger.log(LogLevel.INFO, '      Stokes parameters for dataset %s saved to %s\n', f, fname_filt);
                             
     case 'loadstokes_mat'     % imStokes_filt = elf_io_readwrite(para, 'loadstokes_mat', sprintf('scene%03d', setnr))
@@ -241,7 +241,7 @@ switch action
         varinput.spatial.gbhist = [];
         varinput.info.DNGPrivateData = [];
         
-        save(fname, 'varinput');
+        save(fname, 'varinput', '-v7.3');
     
     case 'loadres'          % data = elf_io_readwrite(para, 'loadres', fname)
         %% load results mats for each scene in an environment; this is called only once per environment
@@ -290,7 +290,7 @@ switch action
         varinput.spatial.gbhist = [];
         varinput.info.DNGPrivateData = [];
 
-        save(para.paths.fname_meanres, 'varinput');
+        save(para.paths.fname_meanres, 'varinput', '-v7.3');
     
     case 'loadmeanres'      % meandata = elf_io_readwrite(para, 'loadmeanres')
         %% load mean results mat for an environment
@@ -304,7 +304,7 @@ switch action
         varinput.int.hist = [];
         varinput.info.DNGPrivateData = [];
 
-        save(para.paths.fname_meanres_int, 'varinput');
+        save(para.paths.fname_meanres_int, 'varinput', '-v7.3');
     
     case 'loadmeanres_int'      % intmean = elf_io_readwrite(para, 'loadmeanres_int')
         %% load mean results mat for an environment
@@ -345,7 +345,7 @@ switch action
         varinput.spatial.gbfft = [];
 
         [~,ds] = fileparts(para.paths.dataset);
-        save(fullfile(para.paths.outputfolder, ds+"_meanres.mat"), 'varinput');
+        save(fullfile(para.paths.outputfolder, ds+"_meanres.mat"), 'varinput', '-v7.3');
     
     case 'loadmeanres_comb'      % meandata = elf_io_readwrite(para, 'loadmeanres')
         %% load mean results mat for an environment
