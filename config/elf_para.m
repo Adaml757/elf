@@ -78,12 +78,6 @@ para.gui.smallsize = 200; % size of small preview images in ELF gui
 
 %% spatial analysis constants
 %% TODO: Move to .env when spatial module is overhauled
-para.ana.scales_deg         = [1 10];   % half-width (FWHM) of receptors in degrees (sigma of Gaussian)
-para.ana.filterazimin       = -90;
-para.ana.filterazimax       = 90;
-para.ana.filterelemin       = -90; 
-para.ana.filterelemax       = 90;
-
 para.ana.spatialbins        = [-90 -10 10 90];%[-90 -50 -10 10 50 90]; % define the boundaries of bins for spatial/contrast analysis
 para.ana.spatialmeantype    = 'rms';    % can be 'mean'/'rms'/'perc'; if this is changed, step 3 and 4 have to be recalculated
 para.ana.spatialmeanthr     = 0;        % contrast threshold in percent; only contrasts >= this value will be included in the mean
