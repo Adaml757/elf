@@ -72,18 +72,37 @@ if ~osfine
     end
     warning('This program has not been tested on your operating system. Please report any errors or bugs.');
 end
-if ~license('test', 'Image_Toolbox') 
+if ~license('test', 'Image_Toolbox')
     error('No Image Processing Toolbox license found. This program will not run properly without this toolbox.');
-elseif verbose
-    Logger.log(LogLevel.INFO, '      Image Processing Toolbox license found.\n');
+else
+    try
+        toolboxdir("images");
+    catch me
+        if me.identifier == "MATLAB:toolboxdir:DirectoryNotFound"
+            error('It seems that you have a license for the Image Processing Toolbox, but have not installed it. This program will not run properly without this toolbox. Please use the Add-On manager to install it.');
+        else
+            rethrow(me);
+        end
+    end
+    if verbose
+        Logger.log(LogLevel.INFO, '      Image Processing Toolbox license and installation found.\n');
+    end
 end
 if ~license('test', 'Statistics_Toolbox')
-    error('No Statistics Toolbox license found. This program will not run properly without this toolbox.');
-elseif verbose
-    Logger.log(LogLevel.INFO, '      Statistics Toolbox license found.\n');
-end
-if verbose 
-    Logger.log(LogLevel.INFO, '      Please make sure the toolboxes are also INSTALLED.\n');
+    error('No Statistics and Machine Learning Toolbox license found. This program will not run properly without this toolbox.');
+else
+    try
+        toolboxdir("stats");
+    catch me
+        if me.identifier == "MATLAB:toolboxdir:DirectoryNotFound"
+            error('It seems that you have a license for the Statistics and Machine Learning Toolbox, but have not installed it. This program will not run properly without this toolbox. Please use the Add-On manager to install it.');
+        else
+            rethrow(me);
+        end
+    end
+    if verbose
+        Logger.log(LogLevel.INFO, '      Statistics and Machine Learning Toolbox license and installation found.\n');
+    end
 end
 if ~verLessThan('matlab', '9.0') && osfine && verbose && license('test', 'Image_Toolbox') && license('test', 'Statistics_Toolbox')
     Logger.log(LogLevel.INFO, '      This program should be running fine.\n');
