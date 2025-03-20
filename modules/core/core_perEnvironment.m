@@ -1,4 +1,4 @@
-function core_perEnvironment(para, infoSum, verbose)
+function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
 %CORE_PERENVIRONMENT calculates the mean image and intensity descriptors for an ELF environment
 %   The mean image is calculated as the mean of all normalised HDR scenes. 
 %      Scenes are normalised in elf_main1 using the correctdng "bright" method, 

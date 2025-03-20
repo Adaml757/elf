@@ -178,12 +178,13 @@ switch action
         fname       = fullfile(para.paths.datapath, para.paths.scenefolder, f+".tif");
         data        = imread(fname);
 
+                            
     case 'savefilt_mat'     % elf_io_readwrite(para, 'savefilt_mat', sprintf('scene%03d', setnr), im_filt_HDR)
         %% saves several filtered HDR images for one scene to mat
         [~,f]       = fileparts(fname); 
         fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, f+"_filt.mat");
         save(fname_filt, 'varinput', '-v7.3');
-                            Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname);
+                            Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname_filt);
                             
     case 'loadfilt_mat'     % im_filt = elf_io_readwrite(para, 'loadfilt_mat', sprintf('scene%03d', setnr))
         %% loads several filtered HDR images for one scene from mat file
@@ -191,7 +192,17 @@ switch action
         fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, f+"_filt.mat");
         temp        = load(fname_filt);
         data        = temp.varinput;
-                
+             
+
+    case 'savefilt_tif'     % elf_io_readwrite(para, 'savefilt_mat', sprintf('scene%03d', setnr), im_filt_HDR)
+        %% saves several filtered HDR images for one scene to mat
+        [~,f]       = fileparts(fname); 
+        for i = 1:length(varinput)
+            im = uint16((2^16-1)*varinput{i});
+            fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, sprintf("%s_filt_%.1f.tif", f, para.ana.filterFwhms(i)));
+            imwrite(im, fname_filt, 'tif', 'Compression', 'lzw');
+                            Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname_filt);
+        end   
 %     case 'savepolar'     % elf_io_readwrite(para, 'savepolar', [], pol)
 %         fname = fullfile(para.paths.root, sprintf('polresults.mat'));
 %         save(fname, 'varinput');

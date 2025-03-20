@@ -19,9 +19,11 @@ infoSum         = elf_io_readwrite(para, 'loadinfosum');      % loads the old in
 for i = 1:length(para.modules)
     modPerEnvFilename = [para.modules{i} '_perEnvironment'];
     if ~isempty(which(modPerEnvFilename))
-        feval(modPerEnvFilename, para, infoSum, verbose);
+        [para, infoSum] = feval(modPerEnvFilename, para, infoSum, verbose);
     end
 end
+
+elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
 
 
 
