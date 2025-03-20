@@ -42,7 +42,7 @@ switch para.ana.targetProjection
         % Calculate a projection vector to transform a fisheye input image 
         % into an equirectangular output image
         projection_ind = proj.calculateProjection();
-        infoSum.grids = proj.getProjectionInfo();
+        infoSum.grids = proj.getProjectionInfo(0, para.ana.imageDirection);
         projSize = proj.RectSize;
 
     case {"equisolid", "equidistant", "stereographic", "orthographic"}
@@ -53,7 +53,7 @@ switch para.ana.targetProjection
         else
             [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize);
         end
-        infoSum.grids = newProj.getProjectionInfo();
+        infoSum.grids = newProj.getProjectionInfo(0, para.ana.imageDirection);
         projSize = newProj.Size;
 
     otherwise

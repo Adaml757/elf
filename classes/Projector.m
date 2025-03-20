@@ -224,11 +224,13 @@ classdef Projector
             % [w_grid, h_grid] = meshgrid(1:I_info.Width, 1:I_info.Height);
             % [X, Y, Z] = obj.pix2cart(w_grid, h_grid)
 
-            if nargin<6 || isempty(roundIt), roundIt=true; end
-            if nargin<5 || isempty(rotation), rotation=0; end
-
-            theta_deg = acosd(X);               % theta is the angle between a viewing direction and the X-axis (X is equal to the scalar dot product of that direction and the X-axis)
-            gamma     = atan2d(-Z, Y)-rotation; % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis; the -Z makes sure that high elevation values are mapped onto a low image index
+            if nargin<6 || isempty(roundIt), roundIt = true; end
+            if nargin<5 || isempty(rotation), rotation = [0 0]; end
+            if isscalar(rotation), rotation = [rotation 0]; end
+            
+            [X, Y, Z] = elf_support_rot3D(X, Y, Z, rotation(2), 'y');
+            theta_deg = acosd(X);                  % theta is the angle between a viewing direction and the X-axis (X is equal to the scalar dot product of that direction and the X-axis)
+            gamma     = atan2d(-Z, Y)-rotation(1); % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis; the -Z makes sure that high elevation values are mapped onto a low image index
             R_mm      = obj.theta2r(theta_deg);
             R_pix     = R_mm * obj.PixPerMM;
             w         = R_pix .* cosd(gamma) + obj.MidPoint(2); % along w; this is 0 + mid for azimuth 0
@@ -260,7 +262,9 @@ classdef Projector
             % [azi_grid, ele_grid] = meshgrid(-90:0.1:90, 90:-0.1:-90);
             % [w, h] = obj.rect2pix(azi_grid, ele_grid)
 
-            if nargin<4 || isempty(rotation), rotation=0; end
+            if nargin<4 || isempty(rotation), rotation=[0 0]; end
+            if isscalar(rotation), rotation = [rotation 0]; end
+
             [X, Y, Z]    = sph2cart(deg2rad(azi), deg2rad(ele), 1);
             [w, h]       = obj.cart2pix(X, Y, Z, rotation);
         end
@@ -294,13 +298,17 @@ classdef Projector
     %   INTERPOLATEDBACKPROJECTION
 
     methods
-        function grids = getProjectionInfo(obj, rotation)
+        function grids = getProjectionInfo(obj, rotation, viewingDirection)
             % GETPROJECTIONINFO creates the grids for plotting on top of the fisheye and equirectangular image
             %
+            % Inputs:
+            %  viewingDirection - "horizontal" or "vertical" (from para.ana.imageDirection)
+            %
             % Outputs:
-            % grids     - projection grids structure. These can be used in plotting.
-
-            if nargin<3 || isempty(rotation), rotation = 0; end
+            %   grids     - projection grids structure. These can be used in plotting.
+            
+            if nargin<3 || isempty(viewingDirection), viewingDirection = "horizontal"; end
+            if nargin<2 || isempty(rotation), rotation = 0; end
             grids.azi = obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3);
             grids.ele = obj.ErEle(1):obj.ErEle(2):obj.ErEle(3);
 
@@ -311,9 +319,23 @@ classdef Projector
             gridres2 = 1;   % resolution of the displayed grid along lines
 
             %% Calculate grids for plotting
+            
             % a) grid for original projection
-            [gazi1, gele1]       = meshgrid(-90:gridres1:90, -90:gridres2:90);
-            [gazi2, gele2]       = meshgrid(-90:gridres2:90, -90:gridres1:90);
+            switch viewingDirection
+                case "horizontal"
+                    [gazi1, gele1] = meshgrid(-90:gridres1:90, -90:gridres2:90);
+                    [gazi2, gele2] = meshgrid(-90:gridres2:90, -90:gridres1:90);
+                    rotation = [rotation 0];
+
+                case "vertical"
+                    [gazi1, gele1] = meshgrid(-180:gridres1:180, 0:gridres2:90);
+                    [gazi2, gele2] = meshgrid(-180:gridres2:180, 0:gridres1:90);
+                    rotation = [rotation 90];
+
+                otherwise
+                        error("Unknown value for ANALYSIS_IMAGE_DIRECTION")
+            end
+           
             gazi2                = gazi2';
             gele2                = gele2';
 
@@ -550,7 +572,7 @@ classdef Projector
 
         function ind = sub2ind(imsize, w_im, h_im)
             % PROJECTOR.SUB2IND turns x/y subscript index vectors into a linear index vector ind for a three-dimensional matrix
-            % Use this for quick reprojection of images.
+            % Use this for quick reprojection of images.++
             %
             % Inputs:
             % imsize            - 3x1 double, size of the image to be sampled
