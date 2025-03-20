@@ -59,10 +59,16 @@ def elf_io_readwrite(para:dict, action:str, fname:str=""):
                 ## TODO: Fix once filter data format has been finalised
 
                 (_, f) = os.path.split(fname)
-                fname  = os.path.join(para["paths"]["datapath"], para["paths"]["filtfolder"], f+".mat")
+                fname  = os.path.join(para["paths"]["datapath"], para["paths"]["filtfolder"], f+"_filt.mat")
                 with h5py.File(fname, "r") as f:
                         data = f.get("varinput")
-                        return np.array(data)
+                        # for x in data[0]:
+                        #         print('---')
+                        #         X = f[x]
+                        #         print(X)
+                        #         xx = np.array(X)
+                        #         print(xx)
+                        return [np.transpose(np.array(f[x]), (2, 1, 0)) for x in data[0]]
         
         elif action == "loadstokes_mat":
                 # load the filtered Stokes vector images for one scene from a mat file
@@ -148,16 +154,16 @@ def elf_io_correctdng(lin_im:np.ndarray, meta_info:dict=[], method:str="default"
         ## 1) Normalise
         lin_im   = lin_im.astype("float")
         if method in ["default", "bitdepth", "bright"]:
-                if np.max(lin_im) <= 1:
+                if np.nanmax(lin_im) <= 1:
                         mv = 1
-                elif np.max(lin_im) <= 2^8:
+                elif np.nanmax(lin_im) <= 2^8:
                         mv = 2^8
-                elif np.max(lin_im) <= 2^16:
+                elif np.nanmax(lin_im) <= 2^16:
                         mv = 2^16 
                 else:
-                        mv = np.max(lin_im)        
+                        mv = np.nanmax(lin_im)        
         elif method in ["max", "maxbright"]:
-                mv   = np.max(lin_im)
+                mv   = np.nanmax(lin_im)
         elif method in ["maxval", "maxvalbright"]:
                 mv = maxval
         else:
@@ -173,7 +179,7 @@ def elf_io_correctdng(lin_im:np.ndarray, meta_info:dict=[], method:str="default"
         if method=="bright" or method=="maxvalbright" or method=="maxbright":
                 ## 3) Gamma correction (bright version)
                 grayim      = sub_rgb2gray(lin_srgb)
-                grayscale   = 0.25/np.mean(grayim)
+                grayscale   = 0.25/np.nanmean(grayim)
                 bright_srgb = np.clip(lin_srgb*grayscale, None, 1)
                 im          = sub_srgbGamma(bright_srgb)
 

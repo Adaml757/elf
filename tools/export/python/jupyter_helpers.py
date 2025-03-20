@@ -38,7 +38,11 @@ def display_img(img: Union[np.ndarray, list], cmap: str = 'gray', figsize: tuple
     for i, I in enumerate(imglist):
         ax = fig.add_subplot(1, len(imglist), i+1)
         ax.imshow(I, cmap=cmap)
-        ax.plot(grid["x"], grid["y"], "k:")
+        if grid:
+            # these grids were made in Matlab,  so they are 1-based, not 0-based
+            x = [p-1 if p is not None else None for p in grid["x"]]
+            y = [p-1 if p is not None else None for p in grid["y"]]
+            ax.plot(x, y, "k:")
         if axtitlelist[i]:
             plt.title(axtitlelist[i])
             # ax.set_title(axtitlelist[i])
