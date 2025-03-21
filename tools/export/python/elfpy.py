@@ -52,22 +52,23 @@ def elf_io_readwrite(para:dict, action:str, fname:str=""):
                 fname  = os.path.join(para["paths"]["datapath"], para["paths"]["scenefolder"], f+".tif")
                 return np.array(Image.open(fname))
                 
+        elif action == "loaddiag_tif":
+                # load the diagnostic image for one scene from the tif file (uncalibrated)
+                # R: saturation, G: low signal, B: movement between exposures
+                # im = elf_io_readwrite(para, "loaddiag_tif", "scene001")
+                
+                (_, f) = os.path.split(fname)
+                fname  = os.path.join(para["paths"]["datapath"], para["paths"]["diagfolder"], f+".tif")
+                return np.array(Image.open(fname))
+        
         elif action == "loadfilt_mat":
                 # load the filtered HDR image for one scene from a mat file
                 # im = elf_io_readwrite(para, "loadfilt_mat", "scene001")
-
-                ## TODO: Fix once filter data format has been finalised
 
                 (_, f) = os.path.split(fname)
                 fname  = os.path.join(para["paths"]["datapath"], para["paths"]["filtfolder"], f+"_filt.mat")
                 with h5py.File(fname, "r") as f:
                         data = f.get("varinput")
-                        # for x in data[0]:
-                        #         print('---')
-                        #         X = f[x]
-                        #         print(X)
-                        #         xx = np.array(X)
-                        #         print(xx)
                         return [np.transpose(np.array(f[x]), (2, 1, 0)) for x in data[0]]
         
         elif action == "loadstokes_mat":
