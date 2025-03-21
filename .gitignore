@@ -4,6 +4,8 @@
 # Ignore the pre-calculated contrast index matrices
 CIM
 modules/*/
+modules/README.md
+modules/.gitignore
 !modules/core/
 *.asv
 obs
