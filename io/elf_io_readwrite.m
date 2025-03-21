@@ -90,9 +90,9 @@ switch action
         if ~exist(fullfile(para.paths.datapath, para.paths.matfolder), 'file')
             mkdir(para.paths.datapath, para.paths.matfolder);
         end
-%         if ~exist(fullfile(para.paths.datapath, para.paths.projfolder), 'file')
-%             mkdir(para.paths.datapath, para.paths.projfolder);
-%         end
+        if ~exist(fullfile(para.paths.datapath, para.paths.diagfolder), 'file')
+            mkdir(para.paths.datapath, para.paths.diagfolder);
+        end
         if ~exist(fullfile(para.paths.datapath, para.paths.filtfolder), 'file')
             mkdir(para.paths.datapath, para.paths.filtfolder);
         end
@@ -172,6 +172,20 @@ switch action
         I           = uint16((2^16-1)*varinput);
         imwrite(I, fname, 'tif', 'Compression', 'lzw');
         
+    case 'savediag_tif'      % elf_io_readwrite(para, 'savediag_tif', sprintf('scene%03d', setnr), im_diag)
+        %% saves the diagnostic image for one scene in a tif; R: saturation, G: low signal, B: movement between exposures
+        % assumes that input image is normalised to 1
+        [~,f]       = fileparts(fname);
+        fname       = fullfile(para.paths.datapath, para.paths.diagfolder, f+".tif");
+        I           = uint8(255*varinput);
+        imwrite(I, fname, 'tif', 'Compression', 'lzw');
+
+    case 'loaddiag_tif'      % I = elf_io_readwrite(para, 'loaddiag_tif', sprintf('scene%03d', setnr))
+        %% loads the diagnostic image for one scene in a tif; R: saturation, G: low signal, B: movement between exposures
+        [~,f]       = fileparts(fname);
+        fname       = fullfile(para.paths.datapath, para.paths.diagfolder, f+".tif");
+        data        = logical(imread(fname));
+
     case 'loadHDR_tif'      % im_HDR = elf_io_readwrite(para, 'loadHDR_tif', sprintf('scene%03d', setnr))
         %% loads the HDR image for one scene from tif
         [~,f]       = fileparts(fname); 

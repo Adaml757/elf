@@ -67,7 +67,7 @@ tic; % Start taking time
 
 % Process one scene at a time
 for iScene = 1:size(sets, 1)
-    clear im_filt res
+    clear res
     
     setStart    = sets(iScene, 1);        % first image in this scene
     setEnd      = sets(iScene, 2);        % last image in this scene
@@ -84,8 +84,6 @@ for iScene = 1:size(sets, 1)
         fName                   = info(imNo).Filename;  % full path to input image file
         im_raw                  = double(elf_io_imread(fName)); % load the image (uint16) and transform to double
 
-        
- 
         % Calibrate and calculate intensity confidence
         [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
         
@@ -109,12 +107,13 @@ for iScene = 1:size(sets, 1)
     
     % Pass a figure number and an outputfilename here only if you want diagnostic pdfs.
     % However, MATLAB can't currently deal with saving these large figures, so no pdf will be created either way.
-    im_HDR      = elf_hdr_calcHDR(im_proj, conf_proj, para.ana.hdrMethod, rawWhiteLevels); % para.ana.hdrMethod can be 'overwrite', 'overwrite2', 'validranges', 'allvalid', 'allvalid2' (default), 'noise', para.ana.hdrMethod    
-    im_HDR_cal  = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
+    [im_HDR, im_diag] = elf_hdr_calcHDR(im_proj, conf_proj, para.ana.hdrMethod, rawWhiteLevels); % para.ana.hdrMethod can be 'overwrite', 'overwrite2', 'validranges', 'allvalid', 'allvalid2' (default), 'noise', para.ana.hdrMethod    
+    im_HDR_cal        = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
     
     %% TODO: Black out horizon if needed
     if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "blackoutRadius") && para.ana.blackoutRadius>0
         im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.blackoutRadius);
+        im_diag = newProj.blackout(im_diag, para.ana.blackoutRadius);
     end
     %% %%%%%%%%%
     
@@ -128,6 +127,10 @@ for iScene = 1:size(sets, 1)
 
     if para.ana.saveSceneTifs
         elf_io_readwrite(para, 'saveHDR_tif', sprintf('scene%03d', iScene), I);
+    end
+
+    if para.ana.saveDiagnosticTifs
+        elf_io_readwrite(para, 'savediag_tif', sprintf('scene%03d', iScene), im_diag);
     end
 
     %% Perform per-scene analysis and plotting for all modules
