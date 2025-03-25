@@ -15,6 +15,7 @@ addpath(fullfile(thispath, 'analysis'));
 addpath(fullfile(thispath, 'calibration'));
 addpath(fullfile(thispath, 'classes'));
 addpath(fullfile(thispath, 'config'));
+addpath(fullfile(thispath, 'core'));
 addpath(fullfile(thispath, 'gui'));
 addpath(fullfile(thispath, 'help'));
 addpath(fullfile(thispath, 'io'));
