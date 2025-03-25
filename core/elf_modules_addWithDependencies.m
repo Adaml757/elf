@@ -66,14 +66,16 @@ function d = loadDotEnv(modName)
     % Outputs:
     %   d - DotEnv object for the information loaded from the .env file
 
+    thisPath    = fileparts(mfilename("fullpath"));
+    envPath     = fullfile(thisPath, '..', 'config');
     if modName == "core"
         envFilename = '';
+        defPath     = fullfile(thisPath, modName);
     else
         envFilename = modName;
+        defPath     = fullfile(thisPath, '..', 'modules', modName);
     end
-    envPath     = fullfile(fileparts(mfilename("fullpath")), '..', 'config');
     defFilename = [modName '_defaults'];
-    defPath     = fullfile(fileparts(mfilename("fullpath")), modName);
     try
         d = DotEnv.fromFiles(envPath, envFilename, defPath, defFilename);
     catch me

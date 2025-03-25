@@ -54,7 +54,11 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
         if verbose
             fh2 = figure(2);
             set(fh2, 'Name', 'Thumbnails (click to enlarge)');
-            hi2 = montage(thumbs, 'thumbnailsize', [100 100]);
+            if size(thumbs, 4)==1
+                hi2 = montage({thumbs}, 'thumbnailsize', [100 100]);  % if thumbs is just a single MxNx3 image, it would be interpreted as 3 grayscale-images
+            else
+                hi2 = montage(thumbs, 'thumbnailsize', [100 100]);
+            end
             res.fnames_im = fNames_im;
             res.infosum = infoSum;
             res.para = para;
