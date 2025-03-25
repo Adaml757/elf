@@ -88,7 +88,7 @@ gui.menu.para.h         = uimenu(gui.fh, 'label', 'Parameters');
 gui.menu.para.editpara  = uimenu(gui.menu.para.h, 'label', 'Edit parameters...', 'callback', cbhandle, 'tag', 'para_edit');
 
 gui.menu.help.h         = uimenu(gui.fh, 'label', 'Help');
-gui.menu.help.gs        = uimenu(gui.menu.help.h, 'label', 'Getting Started...', 'callback', cbhandle, 'tag', 'help_gettingstarted');
+gui.menu.help.gs        = uimenu(gui.menu.help.h, 'label', 'User Manual...', 'callback', cbhandle, 'tag', 'help_gettingstarted');
 gui.menu.help.kb        = uimenu(gui.menu.help.h, 'label', 'Known bugs...', 'callback', cbhandle, 'tag', 'help_knownbugs');
 
 %% set visibility and colours

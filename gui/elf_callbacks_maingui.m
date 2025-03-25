@@ -90,7 +90,8 @@ else
             ismenu = 1;
             refresh = 0;
         case 'help_gettingstarted'
-            open('ELF Getting started guide.pdf');
+            thisPath    = fileparts(mfilename("fullpath"));
+            open(fullfile(thisPath, "..", "help", "User's Manual.pdf"));
             ismenu = 1;
             refresh = 0;
             
