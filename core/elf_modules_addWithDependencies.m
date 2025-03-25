@@ -70,7 +70,7 @@ function d = loadDotEnv(modName)
     envPath     = fullfile(thisPath, '..', 'config');
     if modName == "core"
         envFilename = '';
-        defPath     = fullfile(thisPath, modName);
+        defPath     = fullfile(thisPath);
     else
         envFilename = modName;
         defPath     = fullfile(thisPath, '..', 'modules', modName);

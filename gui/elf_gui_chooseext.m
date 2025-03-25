@@ -14,7 +14,7 @@ outext = ''; % initialise to empty in case the window is closed
 
 %% find all extensions
 allfiles   = elf_io_dir(foldername); %This includes subfolders
-allexts    = arrayfun(@(x) nested_findext(x.name), allfiles, 'UniformOutput', false);
+allexts    = arrayfun(@(x) nested_findext(x.name), allfiles);
 uniqueexts = unique(lower(allexts));
 uniqueexts(strcmp('',uniqueexts)) = []; % remove empty strings
 
@@ -88,7 +88,6 @@ for extnum = length(uniqueexts):-1:1
 end
 
 %% wait until a button is pressed
-%TODO: add callbacks for cancel button
 if showbutton
     uiwait(fh); 
 end

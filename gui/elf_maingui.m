@@ -54,7 +54,6 @@ for i = 1:numsets
     gui.p(i).b1     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .85 .09 .1], 'tag', 'maingui_button1', 'String', '1');
     gui.p(i).b2     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .75 .09 .1], 'tag', 'maingui_button2', 'String', '2');
     gui.p(i).b3     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .65 .09 .1], 'tag', 'maingui_button3', 'String', '3');
-    gui.p(i).b4     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .55 .09 .1], 'tag', 'maingui_button4', 'String', '4');
     gui.p(i).ball   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .45 .18 .1], 'tag', 'maingui_buttonall', 'String', 'Full', 'tooltip', 'Calculate Steps 2, 3 & 4 for this dataset.');
     gui.p(i).exp    = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .35 .18 .1], 'tag', 'maingui_buttonexp', 'String', 'Explore', 'tooltip', 'Explore the results for individual images.');
     gui.p(i).b5     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .10 .18 .1], 'tag', 'maingui_button5', 'String', 'Info');

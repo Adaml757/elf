@@ -16,6 +16,9 @@ a = ms(2)/100;                  % number of columns
 imnr = (y-1) * a + x;
 
 %% Now load that image and its data
-res     = get(src, 'UserData');
-meanim  = elf_io_readwrite(res.para, 'loadHDR_tif', sprintf('scene%03d', imnr));
-elf_plot_image(meanim, res.infosum, '', 'equirectangular_summary', 0);
+data = get(src, 'UserData');
+if imnr<=length(data.fnames_im)
+    fname = data.fnames_im{imnr};
+    im  = elf_io_readwrite(data.para, 'loadHDR_tif', fname);
+    elf_plot_image(im, data.infosum, '', 'equirectangular_summary', 0);
+end
