@@ -28,6 +28,8 @@ for i = 1:size(status, 1)
     set(gui.p(i).b2, 'backgroundcolor', col{status(i, 2)+1}, 'tooltip', tooltips{2}{status(i, 2)+1});
     set(gui.p(i).b3, 'backgroundcolor', col{status(i, 3)+1}, 'tooltip', tooltips{3}{status(i, 3)+1});
     
+    if status(i, 2), en = 'on'; else, en = 'off'; end % only enable exp button if scenes have been calculated
+    set(gui.p(i).exp, 'enable', en);
     if status(i, 4), en = 'on'; else, en = 'off'; end % only enable show button if summary has been calculated
     set(gui.p(i).b6, 'enable', en);
 end

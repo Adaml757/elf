@@ -21,6 +21,7 @@ else
         set(get(src, 'Parent'), 'backgroundcolor', 'y');
         drawnow
         % get dataset name and image format
+        warning('off', 'MATLAB:ui:javaframe:PropertyToBeRemoved')
         thistextbox = findobj('parent', get(src, 'parent'), 'tag', 'dataset');
         dataset     = get(thistextbox, 'String');
         imgformat   = get(thistextbox, 'UserData');
@@ -30,6 +31,7 @@ else
 
         % get range if button callback
         rangebox = findobj('parent', get(src, 'parent'), 'tag', 'maingui_range');
+        warning('on', 'MATLAB:ui:javaframe:PropertyToBeRemoved')
         rangestr = get(rangebox, 'string');
         if ismember(rangestr, {'', ' ', 'all', 'full', '1:end', ':'})
             frange = [];

@@ -20,5 +20,12 @@ data = get(src, 'UserData');
 if imnr<=length(data.fnames_im)
     fname = data.fnames_im{imnr};
     im  = elf_io_readwrite(data.para, 'loadHDR_tif', fname);
-    elf_plot_image(im, data.infosum, '', 'equirectangular_summary', 0);
+    switch data.para.ana.targetProjection
+        case "equirectangular"
+            elf_plot_image(im, data.infosum, '', 'equirectangular_summary', 0);
+        case {"equisolid", "equidistant", "orthographic", "stereographic"}
+            elf_plot_image(im, data.infosum, '', 'equisolid', 0);
+        otherwise
+            error("Summary images for %s projection not yet implemented")
+    end
 end

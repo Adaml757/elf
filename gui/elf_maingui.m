@@ -1,5 +1,7 @@
-function gui = elf_maingui(status, para, datasets, exts, cbhandle)
+function gui = elf_maingui(status, para, datasets, exts, cbhandle, figname)
 % Creates the main GUI for elf, allowing the user to process and examine individual data sets
+
+if nargin<6, figname = "ELF"; end
 
 pnum_cols = para.gui.pnum_cols;
 pnum_rows = para.gui.pnum_rows; 
@@ -20,7 +22,7 @@ gui.ph          = zeros(numsets, 1);
 %% create gui
 % create figure and superpanel
 gui.fh          = elf_support_formatA3(1);
-set(gui.fh, 'name', 'ELF');
+set(gui.fh, 'name', figname);
 
 %% browse button
 uicontrol('Units', 'normalized', 'parent', gui.fh, 'callback', cbhandle, 'Style', 'pushbutton', 'Position', [0 1-browseheight 0.05 browseheight], 'tag', 'maingui_folderbrowse', ...
