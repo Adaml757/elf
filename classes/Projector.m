@@ -328,7 +328,7 @@ classdef Projector
                     rotation = [rotation 0];
 
                 case "vertical"
-                    [gazi1, gele1] = meshgrid(-180:gridres1:180, 0:gridres2:90);
+                    [gazi1, gele1] = meshgrid(-180:gridres1:179.9, 0:gridres2:90);
                     [gazi2, gele2] = meshgrid(-180:gridres2:180, 0:gridres1:90);
                     rotation = [rotation 90];
 
