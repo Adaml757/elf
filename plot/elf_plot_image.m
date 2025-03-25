@@ -78,6 +78,9 @@ end
 switch proj
     case {'contrzone', 'contrzone_h'}
         hi = imagesc(im, 'Parent', ha);
+    case 'equirectangular_summary_squished'
+        hi = image(im, 'Parent', ha);
+        set(hi, 'ButtonDownFcn', @elf_callbacks_image, 'Tag', 'equirectangular_summary', 'UserData', I_info);
     otherwise
         hi = image(im, 'Parent', ha);
         set(hi, 'ButtonDownFcn', @elf_callbacks_image, 'Tag', proj, 'UserData', I_info);
@@ -194,7 +197,11 @@ switch proj
         xts = sort(xpos(ism)); % XTick sorted
         [ism, ypos] = ismember(-90:30:90, ele); 
         yts = sort(ypos(ism)); % YTick sorted
-        labelFS = round(plotPara.axesFontsize*plotPara.corrFac);
+        if ~isempty(plotPara)
+            labelFS = round(plotPara.axesFontsize*plotPara.corrFac);
+        else
+            labelFS = 8;
+        end
         set(ha, 'XTick', [], 'XTickLabel', [], 'YTick', yts, 'YTickLabel', num2str(ele(yts)'), 'fontsize', labelFS);
 
         % set labels and position
