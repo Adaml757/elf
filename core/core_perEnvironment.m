@@ -1,12 +1,12 @@
 function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
-%CORE_PERENVIRONMENT calculates the mean image and intensity descriptors for an ELF environment
-%   The mean image is calculated as the mean of all normalised HDR scenes. 
-%      Scenes are normalised in elf_main1 using the correctdng "bright" method, 
-%      which sets the mean luminance to 1/4 of maximum.
-%   Results are saved as TIF/JPG (mean image), XLSX file and PDF/JPG (int)
-%
-% Typical timing for a 50-scene environment (on ELFPC):
-%      12.5s mean image + 6s mean int + 2.5s verbose
+    %CORE_PERENVIRONMENT calculates the mean image and intensity descriptors for an ELF environment
+    %   The mean image is calculated as the mean of all normalised HDR scenes. 
+    %      Scenes are normalised in elf_main1 using the correctdng "bright" method, 
+    %      which sets the mean luminance to 1/4 of maximum.
+    %   Results are saved as TIF/JPG (mean image), XLSX file and PDF/JPG (int)
+    %
+    % Typical timing for a 50-scene environment (on ELFPC):
+    %      12.5s mean image + 6s mean int + 2.5s verbose
 
     allFiles  = elf_io_dir(fullfile(para.paths.datapath, para.paths.scenefolder, '*.tif'));
     fNames_im = {allFiles.name}; % collect scene names

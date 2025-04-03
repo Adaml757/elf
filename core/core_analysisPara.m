@@ -5,7 +5,7 @@ function anaP = core_analysisPara(d)
         {'RESOLUTION_BOOSTER', 'double';
         'CALCULATE_INT', 'logical';
         'CALCULATE_MEAN_IMAGE', 'logical';
-        'IMAGE_DIRECTION', 'string'; %%
+        'IMAGE_DIRECTION', 'string';
         'TARGET_PROJECTION', 'string';
         'TARGET_AZI_RANGE', 'doublevector';
         'TARGET_ELE_RANGE', 'doublevector';
@@ -15,7 +15,7 @@ function anaP = core_analysisPara(d)
         'INT_ANALYSIS_TYPE', 'string';
         'HDR_METHOD', 'string';
         'SAVE_SCENE_TIFS', 'logical';
-        'SAVE_DIAGNOSTIC_TIFS', 'logical'}; %%
+        'SAVE_DIAGNOSTIC_TIFS', 'logical'};
 
     anaP = d.extractValues('ANALYSIS', anaParameters);
     anaP.version = str2double(d.Env.VERSION);
