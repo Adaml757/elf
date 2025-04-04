@@ -79,7 +79,7 @@ function d = loadDotEnv(modName)
     try
         d = DotEnv.fromFiles(envPath, envFilename, defPath, defFilename);
     catch me
-        error("Module ""%s"" could not be found or is corrupted (%s)", modName, me.message);
+        error("Module ""%s"" or its .env file could not be found or is corrupted (Original error message: %s)", modName, me.message);
     end
 end
 
