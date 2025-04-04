@@ -142,6 +142,9 @@ classdef DotEnv
                     val = temp{1};
                 case {'logical', 'bool', 'boolean'}
                     val = logical(str2double(val));
+                case {'logicalvector', 'boolvector', 'booleanvector'}   
+                    temp = textscan(val, '%f');
+                    val = logical(temp{1});
                 otherwise
                     error('Unknown conversionType: %s', conversionType);
             end
