@@ -35,16 +35,18 @@ cam2rgb  = rgb2cam^-1;                             % from camera to sRGB colour 
 
 %% 1) Normalise
 lin_im   = double(lin_im);
+allpix = lin_im(:);
+allpix(isnan(allpix)) = 0;
 
 switch method
     case {'default', 'bitdepth', 'bright'}
-        if max(lin_im(:)) <= 1,         mv   = 1;
-        elseif max(lin_im(:)) <= 2^8,   mv   = 2^8;
-        elseif max(lin_im(:)) <= 2^16,  mv   = 2^16; 
-        else                            mv   = max(lin_im(:));
+        if max(allpix) <= 1,         mv   = 1;
+        elseif max(allpix) <= 2^8,   mv   = 2^8;
+        elseif max(allpix) <= 2^16,  mv   = 2^16; 
+        else                            mv   = max(allpix);
         end
     case {'max', 'maxbright'}
-                                        mv   = max(lin_im(:));
+                                        mv   = max(allpix);
     case {'maxval', 'maxvalbright'}
                                         mv = maxval;
     otherwise
