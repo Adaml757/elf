@@ -14,6 +14,8 @@ function anaP = core_analysisPara(d)
         'COLOUR_CALIB_TYPE', 'string';
         'INT_ANALYSIS_TYPE', 'string';
         'HDR_METHOD', 'string';
+        'BLACKOUT_RADIUS', 'double';
+        'TARGET_IMAGE_SIZE', 'doublevector';
         'SAVE_SCENE_TIFS', 'logical';
         'SAVE_DIAGNOSTIC_TIFS', 'logical'};
 
@@ -28,5 +30,8 @@ function anaP = core_analysisPara(d)
     end
     if numel(anaP.targetEleRange)~=2
         error("ANALYSIS_TARGET_ELE_RANGE needs to have exactly two elements");
+    end
+    if numel(anaP.targetImageSize)~=3
+        error("ANALYSIS_TARGET_IMAGE_SIZE needs to have exactly three elements");
     end
 end

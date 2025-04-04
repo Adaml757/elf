@@ -41,35 +41,35 @@ im_black = proj.blackout(im_ori);
 % 1
 tic
 [projection_ind, newProj]      = proj.crop2imageCircle(90);
-infoSumCC1 = infoSum; infoSumCC1.grids = newProj.getProjectionInfo(0);
+infoSumCC1 = infoSum; infoSumCC1.grids.scene = newProj.getProjectionInfo(0);
 im_projCC1                     = Projector.apply(im_black, projection_ind, newProj.Size);
 tocX1 = toc;
 
 % 1
 tic
 [projection_ind, newProj]      = newProj.crop2ImageCircle(90);
-infoSumCC2 = infoSum; infoSumCC2.grids = newProj.getProjectionInfo(0);
+infoSumCC2 = infoSum; infoSumCC2.grids.scene = newProj.getProjectionInfo(0);
 im_projCC2                     = Projector.apply(im_projCC1, projection_ind, newProj.Size);
 tocX2 = toc;
 
 % 1
 tic
 [projection_ind, newProj]      = proj.crop2ImageCircle(45);
-infoSumCC3 = infoSum; infoSumCC3.grids = newProj.getProjectionInfo(0);
+infoSumCC3 = infoSum; infoSumCC3.grids.scene = newProj.getProjectionInfo(0);
 im_projCC3                     = Projector.apply(im_black, projection_ind, newProj.Size);
 tocX3 = toc;
 
 % 1
 tic
 [projection_ind, newProj]      = newProj.crop2ImageCircle(90);
-infoSumCC4 = infoSum; infoSumCC4.grids = newProj.getProjectionInfo(0);
+infoSumCC4 = infoSum; infoSumCC4.grids.scene = newProj.getProjectionInfo(0);
 im_projCC4                     = Projector.apply(im_projCC3, projection_ind, newProj.Size);
 im_projCC4(im_projCC4<0) = 0;
 tocX4 = toc;
 
 figure(2); clf; drawnow;
 h = axes;
-infoSum1 = infoSum; infoSum1.grids = proj.getProjectionInfo(0);
+infoSum1 = infoSum; infoSum1.grids.scene = proj.getProjectionInfo(0);
 elf_plot_image(im_ori, infoSum1, h, 'equisolid', 'bright');
 title(sprintf('original'))
 
@@ -99,34 +99,34 @@ return
 % 1
 tic
 [projection_ind, newProj]      = proj.fisheye2fisheyeProjection("equisolid", [1000, 1000, 3], 0);
-infoSumRP1 = infoSum; infoSumRP1.grids = newProj.getProjectionInfo(0);
+infoSumRP1 = infoSum; infoSumRP1.grids.scene = newProj.getProjectionInfo(0);
 im_projRP1                     = Projector.apply(im_ori, projection_ind, [1000, 1000, 3]);
 tocX1 = toc;
 
 % 4
 tic
 [projection_ind, newProj]      = proj.fisheye2fisheyeProjection("equidistant", [1000, 1000, 3], 0);
-infoSumRP2 = infoSum; infoSumRP2.grids = newProj.getProjectionInfo(0);
+infoSumRP2 = infoSum; infoSumRP2.grids.scene = newProj.getProjectionInfo(0);
 im_projRP2                      = Projector.apply(im_ori, projection_ind, [1000, 1000, 3]);
 tocX2 = toc;
 
 % 4
 tic
 [projection_ind, newProj]      = proj.fisheye2fisheyeProjection("stereographic", [1000, 1000, 3], 0);
-infoSumRP3 = infoSum; infoSumRP3.grids = newProj.getProjectionInfo(0);
+infoSumRP3 = infoSum; infoSumRP3.grids.scene = newProj.getProjectionInfo(0);
 im_projRP3                      = Projector.apply(im_ori, projection_ind, [1000, 1000, 3]);
 tocX3 = toc;
 
 % 4
 tic
 [projection_ind, newProj]      = proj.fisheye2fisheyeProjection("orthographic", [1000, 1000, 3], 0);
-infoSumRP4 = infoSum; infoSumRP4.grids = newProj.getProjectionInfo(0);
+infoSumRP4 = infoSum; infoSumRP4.grids.scene = newProj.getProjectionInfo(0);
 im_projRP4                      = Projector.apply(im_ori, projection_ind, [1000, 1000, 3]);
 tocX4 = toc;
 
 figure(5); clf; drawnow;
 h = axes;
-infoSum1 = infoSum; infoSum1.grids = proj.getProjectionInfo(0);
+infoSum1 = infoSum; infoSum1.grids.scene = proj.getProjectionInfo(0);
 elf_plot_image(im_ori, infoSum1, h, 'equisolid', 'bright');
 title(sprintf('original'))
 
@@ -164,28 +164,28 @@ toc3 = toc;
 % 4
 tic
 projection_ind                = proj.calculateProjection(0);
-infoSum1 = infoSum; infoSum1.grids = proj.getProjectionInfo(0);
+infoSum1 = infoSum; infoSum1.grids.scene = proj.getProjectionInfo(0);
 im_proj1                      = Projector.apply(im_ori, projection_ind, proj.RectSize);
 toc4 = toc;
 
 % 5
 tic
 projection_ind                = proj.calculateProjection(45);
-infoSum2 = infoSum; infoSum2.grids = proj.getProjectionInfo(45);
+infoSum2 = infoSum; infoSum2.grids.scene = proj.getProjectionInfo(45);
 im_proj2                      = Projector.apply(im_ori, projection_ind, proj.RectSize);
 toc5 = toc;
 
 % 6
 tic
 projection_ind                = proj.calculateProjection(-45);
-infoSum3 = infoSum; infoSum3.grids = proj.getProjectionInfo(-45);
+infoSum3 = infoSum; infoSum3.grids.scene = proj.getProjectionInfo(-45);
 im_proj3                      = Projector.apply(im_ori, projection_ind, proj.RectSize);
 toc6 = toc;
 
 % 7
 tic
 projection_ind                = proj2.calculateProjection(0);
-infoSum4 = infoSum; infoSum4.grids = proj2.getProjectionInfo(0);
+infoSum4 = infoSum; infoSum4.grids.scene = proj2.getProjectionInfo(0);
 im_proj4                      = proj2.apply(im_ori, projection_ind, proj2.RectSize);
 toc7 = toc;
 

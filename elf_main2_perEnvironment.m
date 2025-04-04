@@ -16,13 +16,14 @@ para            = elf_para_update(para);                      % Combine old para
 infoSum         = elf_io_readwrite(para, 'loadinfosum');      % loads the old infosum file (which contains projection information, and linims)
 
 %% Perform per-environment analysis and plotting for all modules
-for i = 1:length(para.modules)
+for i = length(para.modules):-1:1
+    % run through modules in reverse order (i.e. dependencies before main modules
     modPerEnvFilename = [para.modules{i} '_perEnvironment'];
     if ~isempty(which(modPerEnvFilename))
         [para, infoSum] = feval(modPerEnvFilename, para, infoSum, verbose);
+        elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
     end
 end
-
 elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
 
 

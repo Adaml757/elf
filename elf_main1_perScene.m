@@ -42,7 +42,8 @@ switch para.ana.targetProjection
         % Calculate a projection vector to transform a fisheye input image 
         % into an equirectangular output image
         projection_ind = proj.calculateProjection();
-        infoSum.grids = proj.getProjectionInfo(0, para.ana.imageDirection);
+        infoSum.projs.scene = proj;
+        infoSum.grids.scene = proj.getProjectionInfo(0, para.ana.imageDirection);
         projSize = proj.RectSize;
 
     case {"equisolid", "equidistant", "stereographic", "orthographic"}
@@ -53,7 +54,8 @@ switch para.ana.targetProjection
         else
             [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize);
         end
-        infoSum.grids = newProj.getProjectionInfo(0, para.ana.imageDirection);
+        infoSum.projs.scene = newProj;
+        infoSum.grids.scene = newProj.getProjectionInfo(0, para.ana.imageDirection);
         projSize = newProj.Size;
 
     otherwise
@@ -110,13 +112,11 @@ for iScene = 1:size(sets, 1)
     [im_HDR, im_diag] = elf_hdr_calcHDR(im_proj, conf_proj, para.ana.hdrMethod, rawWhiteLevels); % para.ana.hdrMethod can be 'overwrite', 'overwrite2', 'validranges', 'allvalid', 'allvalid2' (default), 'noise', para.ana.hdrMethod    
     im_HDR_cal        = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
     
-    %% TODO: Black out horizon if needed
+    %% Black out horizon if needed
     if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "blackoutRadius") && para.ana.blackoutRadius>0
         im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.blackoutRadius);
-        im_diag = newProj.blackout(im_diag, para.ana.blackoutRadius);
-    end
-    %% %%%%%%%%%
-    
+        im_diag = newProj.blackout(im_diag, para.ana.blackoutRadius, 0);
+    end    
 
     % Save HDR file as MAT and TIF.
     % TIF is not strictly necessary, but a good diagnostic. 
