@@ -42,6 +42,9 @@ classdef Logger < handle
                 if strncmp(str, "\b", 2)
                     % if the string start with a backspace, don't print the header
                     s = str;
+                elseif strncmp(str, "\n", 2)
+                    s = sprintf('\n[%s] [ %5s ] %-35s: %s', datestr(now, 'HH:MM:SS.FFF'), char(level), callingName, str(3:end));
+
                 else
                     s = sprintf('[%s] [ %5s ] %-35s: %s', datestr(now, 'HH:MM:SS.FFF'), char(level), callingName, str);
                 end
