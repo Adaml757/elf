@@ -194,13 +194,14 @@ classdef Projector
             % [X, Y, Z] = obj.pix2cart(w_grid, h_grid)
             %% TODO: ADD a vector for the optical axis (and one for orientation?)
 
-            if nargin<4 || isempty(rotation), rotation=0; end
+            if nargin<4 || isempty(rotation), rotation = [0 0]; end
+            if isscalar(rotation), rotation = [rotation 0]; end
 
             h_rel = h-obj.MidPoint(1);
             w_rel = w-obj.MidPoint(2);
             R_pix = sqrt(h_rel.^2 + w_rel.^2); % each point's radial excentricity on the sensor (in pixels)
             R_mm  = R_pix / obj.PixPerMM;      % each point's radial excentricity on the sensor (in mm)
-            gamma = atan2d(h_rel, w_rel) - rotation; % angle around the optical axis
+            gamma = atan2d(h_rel, w_rel) - rotation(1); % angle around the optical axis
 
             theta_deg = obj.r2theta(R_mm);           % angle to the optical axis
 
@@ -216,6 +217,7 @@ classdef Projector
             Y = real(Y);
             Z(~isreal(Z)) = NaN; % set to NaN some points far out of the image circle
             Z = real(Z);
+            [X, Y, Z] = elf_support_rot3D(X, Y, Z, rotation(2), 'y');
         end
 
         function [w, h] = cart2pix(obj, X, Y, Z, rotation, roundIt)
@@ -543,6 +545,24 @@ classdef Projector
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     methods (Static)
+        function d = sphericalDist(X, Y, Z, XYZ2, projType)
+            %
+
+
+            if nargin<7, projType = 'xyz'; end
+            if size(XYZ2, 1)~=3 || size(XYZ2, 2)~=1
+                error("XYZ2 must be a 3x1 matrix");
+            end
+            switch projType
+                case {'xyz', 'cart'}
+                    XYZ1 = [X(:)'; Y(:)'; Z(:)']; % 3xN
+                    XYZ2 = repmat(XYZ2(:), [1, size(XYZ1, 2)]);
+                    d = reshape(acosd(dot(XYZ1, XYZ2)), size(X)); % angular distance in degrees for every pixel
+                otherwise
+                    error("Unknown type, or Projector.sphericalDist is not yet implemented for type %s", projType);
+            end
+        end
+
         function im = apply(im, proj_ind, imsize)
             % PROJECTOR.APPLY applies a linear index vector ind to a three-dimensional matrix (image).
             % Use this for quick reprojection of images.
