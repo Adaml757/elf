@@ -26,8 +26,8 @@ para            = elf_para(modules, '', dataSet, imgFormat);
 info            = elf_info_collect(para.paths.datapath, imgFormat);   % this contains EXIF information and filenames, verbose==1 means there will be output during system check
 infoSum         = elf_info_summarise(info, false);                    % summarise EXIF information for this dataset. This will be saved for later use below
 infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linear images are used, correct for that during plotting
-sets            = elf_hdr_brackets(info);                             % determine which images are part of the same scene
-                    Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(sets, 1), dataSet);
+scenes          = elf_hdr_brackets(info);                             % determine which images are part of the same scene
+                    Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(scenes, 1), dataSet);
 
 
 %% Calculate black levels for all images (from calibration or dark images)
@@ -52,7 +52,7 @@ switch para.ana.targetProjection
         if para.ana.targetImageSize(1)==0 && para.ana.targetImageSize(2)==0
             [projection_ind, newProj] = proj.crop2ImageCircle(90);
         else
-            [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize);
+            [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(1));
         end
         infoSum.projs.scene = newProj;
         infoSum.grids.scene = newProj.getProjectionInfo(0, para.ana.imageDirection);
@@ -65,14 +65,21 @@ elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for
 
 %% Step 1: Unwarp images and calculate HDR scenes
 
+if isscalar(para.ana.imageRotation)
+    para.ana.imageRotation = repmat(para.ana.imageRotation, [size(scenes, 1), 1]);
+end
+if length(para.ana.imageRotation) ~= size(scenes, 1)
+    error("Number of image rotation elements must be 1 or equal to the number of scenes in the dataset")
+end
+
 tic; % Start taking time
 
 % Process one scene at a time
-for iScene = 1:size(sets, 1)
+for iScene = 1:size(scenes, 1)
     clear res
     
-    setStart    = sets(iScene, 1);        % first image in this scene
-    setEnd      = sets(iScene, 2);        % last image in this scene
+    setStart    = scenes(iScene, 1);        % first image in this scene
+    setEnd      = scenes(iScene, 2);        % last image in this scene
     nIms        = setEnd - setStart + 1;  % total number of images in this scene
 
     im_proj     = zeros(projSize(1), projSize(2), projSize(3), nIms);  % pre-allocate
@@ -80,6 +87,13 @@ for iScene = 1:size(sets, 1)
 %     im_proj_cal = zeros(lEle, lAzi, infoSum.SamplesPerPixel, numims);  % pre-allocate
     rawWhiteLevels = zeros(3, nIms);        % pre-allocate; raw white levels (after black subtraction)
     
+    if (para.ana.targetImageSize(1)~=0 || para.ana.targetImageSize(2)~=0) && ...
+            ismember(para.ana.targetProjection, ["equisolid", "equidistant", "stereographic", "orthographic"]) && ...
+            para.ana.imageRotation(iScene)~=para.ana.imageRotation(max([1, iScene-1]))
+        % recalculate image index to take into account new rotation
+        [projection_ind, ~] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(iScene));
+
+    end
     for i = 1:nIms % for each image in this set
         % Load image
         imNo                    = setStart + i - 1;     % the number of this image
@@ -90,8 +104,8 @@ for iScene = 1:size(sets, 1)
         [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
         
         % Reproject/Resize/Crop image
-        im_proj(:, :, :, i) = Projector.apply(im_cal, projection_ind, projSize);
-        conf_proj(:, :, :, i)   = Projector.apply(conf, projection_ind, projSize);
+        im_proj(:, :, :, i)   = Projector.apply(im_cal, projection_ind, projSize);
+        conf_proj(:, :, :, i) = Projector.apply(conf, projection_ind, projSize);
         %         im_proj_cal(:, :, :, i) = cal.applySpectral(im_proj(:, :, :, i), info(imnr), para.ana.colourCalibType); % only needed for 'histcomb'-type intensity calculation, but not time-intensive
 
     end
@@ -138,7 +152,7 @@ for iScene = 1:size(sets, 1)
     for i = 1:length(para.modules)
         modPerSceneFilename = [para.modules{i} '_perScene'];
         if ~isempty(which(modPerSceneFilename))
-            res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, infoSum, iScene, size(sets, 1));
+            res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, infoSum, iScene, size(scenes, 1));
         end
     end
 
@@ -147,7 +161,7 @@ for iScene = 1:size(sets, 1)
     elf_io_readwrite(para, 'saveres', sceneName, res);
 
                     if iScene == 1
-                        Logger.log(LogLevel.INFO, '\tStarting scene-by-scene calibration, HDR creation and analysis. Projected time: %.2f minutes.\n', toc/60*size(sets, 1));
+                        Logger.log(LogLevel.INFO, '\tStarting scene-by-scene calibration, HDR creation and analysis. Projected time: %.2f minutes.\n', toc/60*size(scenes, 1));
                         Logger.log(LogLevel.INFO, '\tScene: 1..');
                     elseif mod(iScene-1, 20)==0
                         Logger.log(LogLevel.INFO, '\n\t%d..', iScene);

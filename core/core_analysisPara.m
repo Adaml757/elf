@@ -6,6 +6,7 @@ function anaP = core_analysisPara(d)
         'CALCULATE_INT', 'logical';
         'CALCULATE_MEAN_IMAGE', 'logical';
         'IMAGE_DIRECTION', 'string';
+        'IMAGE_ROTATION', 'double';
         'TARGET_PROJECTION', 'string';
         'TARGET_AZI_RANGE', 'doublevector';
         'TARGET_ELE_RANGE', 'doublevector';
