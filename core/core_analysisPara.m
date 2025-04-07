@@ -35,4 +35,5 @@ function anaP = core_analysisPara(d)
     if numel(anaP.targetImageSize)~=3
         error("ANALYSIS_TARGET_IMAGE_SIZE needs to have exactly three elements");
     end
+    anaP.imageDirection = ViewDir(anaP.imageDirection);
 end

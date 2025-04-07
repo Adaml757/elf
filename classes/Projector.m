@@ -309,7 +309,7 @@ classdef Projector
             % Outputs:
             %   grids     - projection grids structure. These can be used in plotting.
             
-            if nargin<3 || isempty(viewingDirection), viewingDirection = "horizontal"; end
+            if nargin<3 || isempty(viewingDirection), viewingDirection = ViewDir.H; end
             if nargin<2 || isempty(rotation), rotation = 0; end
             grids.azi = obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3);
             grids.ele = obj.ErEle(1):obj.ErEle(2):obj.ErEle(3);
@@ -324,12 +324,12 @@ classdef Projector
             
             % a) grid for original projection
             switch viewingDirection
-                case "horizontal"
+                case {ViewDir.H, ViewDir.W, ViewDir.E, ViewDir.S, ViewDir.N, ViewDir.SE, ViewDir.SW, ViewDir.NE, ViewDir.NW}
                     [gazi1, gele1] = meshgrid(-90:gridres1:90, -90:gridres2:90);
                     [gazi2, gele2] = meshgrid(-90:gridres2:90, -90:gridres1:90);
                     rotation = [rotation 0];
 
-                case "vertical"
+                case {ViewDir.U, ViewDir.D}
                     [gazi1, gele1] = meshgrid(-180:gridres1:179.9, 0:gridres2:90);
                     [gazi2, gele2] = meshgrid(-180:gridres2:180, 0:gridres1:90);
                     rotation = [rotation 90];

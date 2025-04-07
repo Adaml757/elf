@@ -29,6 +29,19 @@ infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linea
 scenes          = elf_hdr_brackets(info);                             % determine which images are part of the same scene
                     Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(scenes, 1), dataSet);
 
+%% Expand some parameters to one per image
+if isscalar(para.ana.imageRotation)
+    para.ana.imageRotation = repmat(para.ana.imageRotation, [size(scenes, 1), 1]);
+end
+if length(para.ana.imageRotation) ~= size(scenes, 1)
+    error("Number of image rotation elements must be 1 or equal to the number of scenes in the dataset")
+end
+if isscalar(para.ana.imageDirection)
+    para.ana.imageDirection = repmat(para.ana.imageDirection, [size(scenes, 1), 1]);
+end
+if length(para.ana.imageDirection) ~= size(scenes, 1)
+    error("Number of image direction elements must be 1 or equal to the number of scenes in the dataset")
+end
 
 %% Calculate black levels for all images (from calibration or dark images)
 [info, ~, infoSum.blackWarnings] = Calibrator.calculateBlackLevels(info, imgFormat);
@@ -55,7 +68,7 @@ switch para.ana.targetProjection
             [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(1));
         end
         infoSum.projs.scene = newProj;
-        infoSum.grids.scene = newProj.getProjectionInfo(0, para.ana.imageDirection);
+        infoSum.grids.scene = newProj.getProjectionInfo(0, para.ana.imageDirection(1)); %% NOTE: We are currently only storing one grid: That for the first image
         projSize = newProj.Size;
 
     otherwise
@@ -65,12 +78,7 @@ elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for
 
 %% Step 1: Unwarp images and calculate HDR scenes
 
-if isscalar(para.ana.imageRotation)
-    para.ana.imageRotation = repmat(para.ana.imageRotation, [size(scenes, 1), 1]);
-end
-if length(para.ana.imageRotation) ~= size(scenes, 1)
-    error("Number of image rotation elements must be 1 or equal to the number of scenes in the dataset")
-end
+
 
 tic; % Start taking time
 
