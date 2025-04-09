@@ -135,9 +135,9 @@ for iScene = 1:size(scenes, 1)
     im_HDR_cal        = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
     
     %% Black out horizon if needed
-    if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "blackoutRadius") && para.ana.blackoutRadius>0
-        im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.blackoutRadius);
-        im_diag = newProj.blackout(im_diag, para.ana.blackoutRadius, 0);
+    if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "validImageRadius") && para.ana.validImageRadius>0
+        im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.validImageRadius);
+        im_diag = newProj.blackout(im_diag, para.ana.validImageRadius, 0);
     end    
 
     % Save HDR file as MAT and TIF.

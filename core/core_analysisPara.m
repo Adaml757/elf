@@ -15,7 +15,7 @@ function anaP = core_analysisPara(d)
         'COLOUR_CALIB_TYPE', 'string';
         'INT_ANALYSIS_TYPE', 'string';
         'HDR_METHOD', 'string';
-        'BLACKOUT_RADIUS', 'double';
+        'VALID_IMAGE_RADIUS', 'double';
         'TARGET_IMAGE_SIZE', 'doublevector';
         'SAVE_SCENE_TIFS', 'logical';
         'SAVE_DIAGNOSTIC_TIFS', 'logical'};
