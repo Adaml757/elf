@@ -213,7 +213,7 @@ switch action
         [~,f]       = fileparts(fname); 
         for i = 1:length(varinput)
             im = uint16((2^16-1)*varinput{i});
-            fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, sprintf("%s_filt_%.1f.tif", f, para.ana.filterFwhms(i)));
+            fname_filt  = fullfile(para.paths.datapath, para.paths.filtfolder, sprintf("%s_filt_%.1f.tif", f, para.ana.filter.fwhms(i)));
             imwrite(im, fname_filt, 'tif', 'Compression', 'lzw');
                             Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname_filt);
         end   
