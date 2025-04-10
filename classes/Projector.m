@@ -223,8 +223,7 @@ classdef Projector
         function [w, h] = cart2pix(obj, X, Y, Z, rotation, roundIt)
             % CART2PIX translates X/Y/Z positions into w/h pixel positions in the image
             %
-            % [w_grid, h_grid] = meshgrid(1:I_info.Width, 1:I_info.Height);
-            % [X, Y, Z] = obj.pix2cart(w_grid, h_grid)
+            % [w, h] = obj.cart2pix(X, Y, Z, rotation, roundIt)
 
             if nargin<6 || isempty(roundIt), roundIt = true; end
             if nargin<5 || isempty(rotation), rotation = [0 0]; end
