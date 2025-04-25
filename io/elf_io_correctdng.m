@@ -1,4 +1,4 @@
-function im = elf_io_correctdng(lin_im, meta_info, method, maxval)
+function im = elf_io_correctdng(lin_im, meta_info, method, maxval, normTomedian)
 % ELF_IO_CORRECTDNG takes a linear DNG image (uint16 values), converts its
 %   colour space to sRGB and gamma-corrects it for "normal" display (assuming normal white balance is set). 
 %   Algorithm adapted from Rob Sumner (2014) "Processing RAW Images in
@@ -16,58 +16,67 @@ function im = elf_io_correctdng(lin_im, meta_info, method, maxval)
 %                                           'bright'/'maxbright'/'maxvalbright' : use a bright version of gamma correction
 %
 
-%%
-if nargin<3, method = 'default'; end
-if nargin<2 || isempty(meta_info) || (length(meta_info.ColorMatrix2) == 1 && meta_info.ColorMatrix2 == 0)
-    meta_info.ColorMatrix2 = [0.7866, -0.2108, -0.0555, -0.4869, 1.2483, 0.2681, -0.1176, 0.2069, 0.7501];
-    warning('io_correctdng: No valid colour correction matrix provided. Using standard D800 matrix.');
-end
+    %%
+    if nargin<5, normTomedian = false; end
+    if nargin<4, maxval = []; end
+    if nargin<3, method = 'default'; end
+    if nargin<2 || isempty(meta_info) || (length(meta_info.ColorMatrix2) == 1 && meta_info.ColorMatrix2 == 0)
+        meta_info.ColorMatrix2 = [0.7866, -0.2108, -0.0555, -0.4869, 1.2483, 0.2681, -0.1176, 0.2069, 0.7501];
+        warning('io_correctdng: No valid colour correction matrix provided. Using standard D800 matrix.');
+    end
+    
+    %% Parameters
+    % create conversion matrices
+    rgb2xyz  = [.4124564 .3575761 .1804375
+                .2126729 .7151522 .0721750
+                .0193339 .1191920 .9503041];           % from Adobe sRGB to XYZ colour space
+    xyz2cam  = reshape(meta_info.ColorMatrix2, 3, 3)'; % from XYZ to camera colour space
+    rgb2cam  = xyz2cam * rgb2xyz;                      % from sRGB to camera colour space
+    rgb2cam  = rgb2cam ./ repmat(sum(rgb2cam,2),1,3);  % normalize rows to 1
+    cam2rgb  = rgb2cam^-1;                             % from camera to sRGB colour space
+    
+    %% 1) Normalise
+    lin_im   = double(lin_im);
+    allpix   = lin_im(:);
+    nanSel   = isnan(allpix(:));
+    allpix(nanSel) = 0;
+    
+    switch method
+        case {'default', 'bitdepth', 'bright'}
+            if max(allpix) <= 1,         mv   = 1;
+            elseif max(allpix) <= 2^8,   mv   = 2^8;
+            elseif max(allpix) <= 2^16,  mv   = 2^16; 
+            else                            mv   = max(allpix);
+            end
+        case {'max', 'maxbright'}
+                                            mv   = max(allpix);
+        case {'maxval', 'maxvalbright'}
+                                            mv = maxval;
+        otherwise
+            error('Unknown correctdng method: %s', method);
+    end
+    lin_im   = lin_im / mv;
+    
+    %% 2) Colour Space Conversion to sRGB
+    lin_srgb = sub_apply_cmatrix(lin_im, cam2rgb);     % apply conversion matrix
+    lin_srgb = max(0, min(lin_srgb,1));                 % Always keep image clipped b/w 0-1
+    
+    %% 3) Gamma correction
+    im       = sub_srgbGamma(lin_srgb);
+    if strcmp(method, 'bright') || strcmp(method, 'maxvalbright') || strcmp(method, 'maxbright')
+        %% 3) Gamma correction (bright version)
+        grayim      = rgb2gray(lin_srgb);
+        grayscale   = 0.25/mean(grayim(:));
+        bright_srgb = min(1, lin_srgb*grayscale);
+        im          = sub_srgbGamma(bright_srgb);
+    end
+    
+    im(nanSel) = nan;
 
-%% Parameters
-% create conversion matrices
-rgb2xyz  = [.4124564 .3575761 .1804375
-            .2126729 .7151522 .0721750
-            .0193339 .1191920 .9503041];           % from Adobe sRGB to XYZ colour space
-xyz2cam  = reshape(meta_info.ColorMatrix2, 3, 3)'; % from XYZ to camera colour space
-rgb2cam  = xyz2cam * rgb2xyz;                      % from sRGB to camera colour space
-rgb2cam  = rgb2cam ./ repmat(sum(rgb2cam,2),1,3);  % normalize rows to 1
-cam2rgb  = rgb2cam^-1;                             % from camera to sRGB colour space
-
-%% 1) Normalise
-lin_im   = double(lin_im);
-allpix = lin_im(:);
-allpix(isnan(allpix)) = 0;
-
-switch method
-    case {'default', 'bitdepth', 'bright'}
-        if max(allpix) <= 1,         mv   = 1;
-        elseif max(allpix) <= 2^8,   mv   = 2^8;
-        elseif max(allpix) <= 2^16,  mv   = 2^16; 
-        else                            mv   = max(allpix);
-        end
-    case {'max', 'maxbright'}
-                                        mv   = max(allpix);
-    case {'maxval', 'maxvalbright'}
-                                        mv = maxval;
-    otherwise
-        error('Unknown correctdng method: %s', method);
-end
-lin_im   = lin_im / mv;
-
-%% 2) Colour Space Conversion to sRGB
-lin_srgb = sub_apply_cmatrix(lin_im, cam2rgb);     % apply conversion matrix
-lin_srgb = max(0, min(lin_srgb,1));                 % Always keep image clipped b/w 0-1
-
-%% 3) Gamma correction
-im       = sub_srgbGamma(lin_srgb);
-if strcmp(method, 'bright') || strcmp(method, 'maxvalbright') || strcmp(method, 'maxbright')
-    %% 3) Gamma correction (bright version)
-    grayim      = rgb2gray(lin_srgb);
-    grayscale   = 0.25/mean(grayim(:));
-    bright_srgb = min(1, lin_srgb*grayscale);
-    im          = sub_srgbGamma(bright_srgb);
-end
-
+    %% Normalise to set median to 50%
+    if normTomedian
+        im = 0.5*im/median(im, "all", "omitmissing");
+    end
 end
 
 %% subfunctions
