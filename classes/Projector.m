@@ -397,6 +397,35 @@ classdef Projector
             projection_ind     = obj.sub2ind(obj.Size, w2_grid, h2_grid);
         end
 
+        function projection_ind = array2image(obj, prArray)
+            % ARRAY2IMAGE calculates a projection index to project activations of a photoreceptor
+            % photoreceptor array onto a fisheye image.
+            %
+            % Inputs: 
+            %   prArray - Nx3 array of XYZ photoreceptor angles
+            %
+            % Outputs:
+            %   projection_ind  - projections index matrix. 
+            % 
+            % The projected image can be calculated as 
+            % im_proj = Projector.apply(projection_ind, im, proj.Size)
+
+            Logger.log(LogLevel.INFO, '\tCalculating projection constants...\n');
+            [w_grid, h_grid] = meshgrid(1:obj.Size(2), 1:obj.Size(1)); % grid of desired output image coordinates
+            [x, y, z] = obj.pix2cart(w_grid(:), h_grid(:));
+            xyz = [x(:) y(:) z(:)]';
+
+            prArray3xN = prArray';  % make into 3xN
+            projection_ind = nan(size(x));
+            nRecs = size(prArray, 1);
+            for i = 1:length(x)
+                exc = acosd(dot(prArray3xN, repmat(xyz(:, i), [1, nRecs])));
+                [~, projection_ind(i)] = min(exc);
+            end
+            projection_ind = obj.sub2ind2(size(prArray), projection_ind);
+            Logger.log(LogLevel.INFO, '\bdone.\n');
+        end
+
         function [projection_ind, newProjector] = crop2ImageCircle(obj, maxRadius_deg)
             % CROP2IMAGECIRCLE calculates a projection index to crop an image tightly around an image circle with a given radius. Even if the original
             % image is off-centre, the new image will be centred.
@@ -618,6 +647,22 @@ classdef Projector
             ind       = sub2ind(imsize, ind1, ind2, ind3);  % transform into linear indexes
 
             ind(sel)  = NaN;
+        end
+
+        function ind = sub2ind2(imsize, i_im)
+            % PROJECTOR.SUB2IND2 is the 2D version of PROJECTOR.SUB2IND and can be used on a whole image stack
+            % i_im              - 1st image coordinate (e.g. list-index)
+            
+            %% calculate linear index vector for projection
+            ind1    = repmat(round(i_im(:)), imsize(2), 1); % repeat three times to call for each channel
+            ind2    = reshape(repmat(1:imsize(2), length(i_im(:)), 1), [], 1);
+            
+            ind1(ind1>imsize(1)) = NaN;
+            ind2(ind2>imsize(2)) = NaN;
+            ind1(ind1<1) = NaN;
+            ind2(ind2<1) = NaN;
+            
+            ind     = sub2ind(imsize, ind1, ind2);  % transform into linear indexes
         end
 
         function ind = sub2ind4(imsize, w_im, h_im, n_im)
