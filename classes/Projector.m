@@ -410,7 +410,7 @@ classdef Projector
             % The projected image can be calculated as 
             % im_proj = Projector.apply(projection_ind, im, proj.Size)
 
-            Logger.log(LogLevel.INFO, '\tCalculating projection constants...\n');
+            Logger.log(LogLevel.INFO, '\tCalculating projection of photorecetor array onto fisheye image...\n');
             [w_grid, h_grid] = meshgrid(1:obj.Size(2), 1:obj.Size(1)); % grid of desired output image coordinates
             [x, y, z] = obj.pix2cart(w_grid(:), h_grid(:));
             xyz = [x(:) y(:) z(:)]';
@@ -418,10 +418,22 @@ classdef Projector
             prArray3xN = prArray';  % make into 3xN
             projection_ind = nan(size(x));
             nRecs = size(prArray, 1);
-            for i = 1:length(x)
-                exc = acosd(dot(prArray3xN, repmat(xyz(:, i), [1, nRecs])));
-                [~, projection_ind(i)] = min(exc);
+            
+            wbh = waitbar(0, sprintf('Projecting receptor array onto image'), "Name", "Calculating projection"); drawnow
+            updateFreq = round(length(x)/100);  % update waitbar every 
+            try
+                for i = 1:length(x)
+                    exc = acosd(dot(prArray3xN, repmat(xyz(:, i), [1, nRecs])));
+                    [~, projection_ind(i)] = min(exc);
+                    if mod(i, updateFreq)==0
+                        waitbar(i/length(x), wbh);
+                    end
+                end
+            catch me
+                try close(wbh); end
+                rethrow(me)
             end
+            try close(wbh); end
             projection_ind = obj.sub2ind2(size(prArray), projection_ind);
             Logger.log(LogLevel.INFO, '\bdone.\n');
         end
