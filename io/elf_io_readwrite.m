@@ -259,14 +259,27 @@ switch action
     case 'savepolar_jpg'     % elf_io_readwrite(para, 'savepolar_tif', sprintf('set%03d', iScene), {int, aop, dolp})
         %% saves several polarisation images for one scene to tif
         [~,f] = fileparts(fname); 
+        %%TODO: Some of this should be done outside, maybe save from plotting function
         for i = 1:size(varinput, 2)
-            im_int = uint8((2^8-1)*varinput{1, i});
-            im_aop = uint8((2^8-1)*varinput{2, i});
-            im_dolp = uint8((2^8-1)*varinput{3, i});
-            fname  = @(x) fullfile(para.paths.datapath, para.paths.polarfolder, sprintf("%s_polar_%s_%.1f.jpg", f, x, para.ana.filter.fwhms(i)));
-            imwrite(im_int, fname("int"), 'jpg');
-            imwrite(im_aop, fname("aop"), 'jpg');
-            imwrite(im_dolp, fname("dolp"), 'jpg');
+            int = varinput{1, i};
+            aop = varinput{2, i}(:, :, para.ana.polar.channel);
+            dolp = varinput{3, i}(:, :, para.ana.polar.channel);
+
+            im_int = uint8((2^8-1)*int);
+
+            hsvimage        = zeros(size(aop, 1), size(aop, 2));
+            hsvimage(:,:,1) = mod(aop-90, 180)/180;    % Hue
+            hsvimage(:,:,2) = 1;                    % Saturation
+            hsvimage(:,:,3) = dolp;                 % Intensity
+            rgb2            = hsv2rgb(hsvimage);    % Map to RGB colour space for display
+            im_aop = uint8((2^8-1)*rgb2);
+            
+            dolp(dolp>1) = 1;
+            im_dolp = uint8((2^8-1)*dolp);
+            fnamegen  = @(x) fullfile(para.paths.datapath, para.paths.polarfolder, sprintf("%s_polar_%s_%.1f.jpg", f, x, para.ana.filter.fwhms(i)));
+            imwrite(im_int, fnamegen("int"), 'jpg');
+            imwrite(im_aop, fnamegen("aop"), 'jpg');
+            imwrite(im_dolp, jet(180), fnamegen("dolp"), 'jpg');
                             Logger.log(LogLevel.INFO, '      Polarisation files %s saved\n', f);
         end
 
@@ -274,13 +287,26 @@ switch action
         %% saves several polarisation images for one scene to tif
         [~,f] = fileparts(fname); 
         for i = 1:size(varinput, 2)
-            im_int = uint8((2^8-1)*varinput{1, i});
-            im_aop = uint8((2^8-1)*varinput{2, i});
-            im_dolp = uint8((2^8-1)*varinput{3, i});
-            fname  = @(x) fullfile(para.paths.datapath, para.paths.polarfolder, sprintf("%s_polar_array_%s_%.1f.jpg", f, x, para.ana.filter.fwhms(i)));
-            imwrite(im_int, fname("int"), 'jpg');
-            imwrite(im_aop, fname("aop"), 'jpg');
-            imwrite(im_dolp, fname("dolp"), 'jpg');
+            int = varinput{1, i};
+            aop = varinput{2, i}(:, :, para.ana.polar.channel);
+            dolp = varinput{3, i}(:, :, para.ana.polar.channel);
+
+            im_int = uint8((2^8-1)*int);
+
+            hsvimage        = zeros(size(aop, 1), size(aop, 2));
+            hsvimage(:,:,1) = mod(aop-90, 180)/180;    % Hue
+            hsvimage(:,:,2) = 1;                    % Saturation
+            hsvimage(:,:,3) = dolp;                 % Intensity
+            rgb2            = hsv2rgb(hsvimage);    % Map to RGB colour space for display
+            im_aop = uint8((2^8-1)*rgb2);
+            
+            dolp(dolp>1) = 1;
+            im_dolp = uint8((2^8-1)*dolp);
+            
+            fnamegen  = @(x) fullfile(para.paths.datapath, para.paths.polarfolder, sprintf("%s_polar_array_%s_%.1f.jpg", f, x, para.ana.filter.fwhms(i)));
+            imwrite(im_int, fnamegen("int"), 'jpg');
+            imwrite(im_aop, fnamegen("aop"), 'jpg');
+            imwrite(im_dolp, jet(180), fnamegen("dolp"), 'jpg');
                             Logger.log(LogLevel.INFO, '      Polarisation files %s saved\n', f);
         end
 

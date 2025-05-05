@@ -410,7 +410,7 @@ classdef Projector
             % The projected image can be calculated as 
             % im_proj = Projector.apply(projection_ind, im, proj.Size)
 
-            Logger.log(LogLevel.INFO, '\tCalculating projection of photorecetor array onto fisheye image...\n');
+            Logger.log(LogLevel.INFO, '\tCalculating projection of photoreceptor array onto fisheye image...\n');
             [w_grid, h_grid] = meshgrid(1:obj.Size(2), 1:obj.Size(1)); % grid of desired output image coordinates
             [x, y, z] = obj.pix2cart(w_grid(:), h_grid(:));
             xyz = [x(:) y(:) z(:)]';
