@@ -46,6 +46,7 @@ end
 %% define further folder structure
 para.paths.matfolder        = "mat";            % subfolder of data folder into which to save the .mat descriptor files (and individual .pdf files, if activated) 
 para.paths.filtfolder       = "filt";           % subfolder of data folder into which to save the filtered images
+para.paths.polarfolder      = "polar";           % subfolder of data folder into which to save the filtered images
 para.paths.scenefolder      = "scenes";         % subfolder of data folder into which to save the scene images
 para.paths.diagfolder       = "diag";         % subfolder of data folder into which to save the diagnostic images
 para.paths.calibfolder      = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');

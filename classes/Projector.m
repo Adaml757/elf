@@ -303,7 +303,7 @@ classdef Projector
             % GETPROJECTIONINFO creates the grids for plotting on top of the fisheye and equirectangular image
             %
             % Inputs:
-            %  viewingDirection - "horizontal" or "vertical" (from para.ana.imageDirection)
+            %  viewingDirection - ViewDir object (from para.ana.imageDirection)
             %
             % Outputs:
             %   grids     - projection grids structure. These can be used in plotting.

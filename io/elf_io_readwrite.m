@@ -96,6 +96,9 @@ switch action
         if ~exist(fullfile(para.paths.datapath, para.paths.filtfolder), 'file')
             mkdir(para.paths.datapath, para.paths.filtfolder);
         end
+        if ~exist(fullfile(para.paths.datapath, para.paths.polarfolder), 'file')
+            mkdir(para.paths.datapath, para.paths.polarfolder);
+        end
         if ~exist(para.paths.outputfolder, 'file')
             mkdir(para.paths.outputfolder);
         end
@@ -242,7 +245,7 @@ switch action
                             Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname_filt);
         end
 
-    case 'savefilt_array_tif'     % elf_io_readwrite(para, 'savefilt_mat', sprintf('scene%03d', iScene), im_filt_HDR)
+    case 'savefilt_array_tif'     % elf_io_readwrite(para, 'savefilt_array_tif', sprintf('scene%03d', iScene), im_filt_HDR)
         %% saves several filtered HDR images for one scene to tif
         % The resulting file is 10x bigger than a jpg, but there is rarely any difference in quality
         [~,f]       = fileparts(fname); 
@@ -252,6 +255,35 @@ switch action
             imwrite(im, fname_filt, 'tif', 'Compression', 'lzw');
                             Logger.log(LogLevel.INFO, '      Filtered %s saved to %s\n', f, fname_filt);
         end
+
+    case 'savepolar_jpg'     % elf_io_readwrite(para, 'savepolar_tif', sprintf('set%03d', iScene), {int, aop, dolp})
+        %% saves several polarisation images for one scene to tif
+        [~,f] = fileparts(fname); 
+        for i = 1:size(varinput, 2)
+            im_int = uint8((2^8-1)*varinput{1, i});
+            im_aop = uint8((2^8-1)*varinput{2, i});
+            im_dolp = uint8((2^8-1)*varinput{3, i});
+            fname  = @(x) fullfile(para.paths.datapath, para.paths.polarfolder, sprintf("%s_polar_%s_%.1f.jpg", f, x, para.ana.filter.fwhms(i)));
+            imwrite(im_int, fname("int"), 'jpg');
+            imwrite(im_aop, fname("aop"), 'jpg');
+            imwrite(im_dolp, fname("dolp"), 'jpg');
+                            Logger.log(LogLevel.INFO, '      Polarisation files %s saved\n', f);
+        end
+
+    case 'savepolar_array_jpg'     % elf_io_readwrite(para, 'savepolar_array_tif', sprintf('scene%03d', iScene), {int, aop, dolp})
+        %% saves several polarisation images for one scene to tif
+        [~,f] = fileparts(fname); 
+        for i = 1:size(varinput, 2)
+            im_int = uint8((2^8-1)*varinput{1, i});
+            im_aop = uint8((2^8-1)*varinput{2, i});
+            im_dolp = uint8((2^8-1)*varinput{3, i});
+            fname  = @(x) fullfile(para.paths.datapath, para.paths.polarfolder, sprintf("%s_polar_array_%s_%.1f.jpg", f, x, para.ana.filter.fwhms(i)));
+            imwrite(im_int, fname("int"), 'jpg');
+            imwrite(im_aop, fname("aop"), 'jpg');
+            imwrite(im_dolp, fname("dolp"), 'jpg');
+                            Logger.log(LogLevel.INFO, '      Polarisation files %s saved\n', f);
+        end
+
 %     case 'savepolar'     % elf_io_readwrite(para, 'savepolar', [], pol)
 %         fname = fullfile(para.paths.root, sprintf('polresults.mat'));
 %         save(fname, 'varinput');

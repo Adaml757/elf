@@ -75,7 +75,7 @@ function im = elf_io_correctdng(lin_im, meta_info, method, maxval, normTomedian)
 
     %% Normalise to set median to 50%
     if normTomedian
-        im = 0.5*im/median(im, "all", "omitmissing");
+        im = 0.5*im/median(im(im>0), "all", "omitmissing");
     end
 end
 
