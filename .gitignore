@@ -10,3 +10,4 @@ beta
 config/*.env
 local_optimisation_tests
 *.pyc
+config/customfiles/*
