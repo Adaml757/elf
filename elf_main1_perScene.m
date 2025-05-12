@@ -18,8 +18,7 @@ if nargin < 3 || isempty(imgFormat), imgFormat = "*.dng"; end
 if nargin < 2 , modules = {}; end
 if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
 
-                    Logger.log(LogLevel.INFO, '\n');
-                    Logger.log(LogLevel.INFO, '----- ELF Step 1: Calibration, HDR and Per-Scene Analysis -----\n')
+                    Logger.log(LogLevel.INFO, '\n----- ELF Step 1: Calibration, HDR and Per-Scene Analysis -----\n')
 
 %% Set up paths and file names; read info, infosum and para, calculate sets
 para            = elf_para(modules, '', dataSet, imgFormat);
