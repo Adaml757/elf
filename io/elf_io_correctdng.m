@@ -22,7 +22,7 @@ function im = elf_io_correctdng(lin_im, meta_info, method, maxval, normTomedian)
     if nargin<3, method = 'default'; end
     if nargin<2 || isempty(meta_info) || (length(meta_info.ColorMatrix2) == 1 && meta_info.ColorMatrix2 == 0)
         meta_info.ColorMatrix2 = [0.7866, -0.2108, -0.0555, -0.4869, 1.2483, 0.2681, -0.1176, 0.2069, 0.7501];
-        warning('io_correctdng: No valid colour correction matrix provided. Using standard D800 matrix.');
+        warning('io_correctdng:NoMatrix', 'io_correctdng: No valid colour correction matrix provided. Using standard D800 matrix.');
     end
     
     %% Parameters

@@ -20,9 +20,9 @@ uniqueexts(strcmp('',uniqueexts)) = []; % remove empty strings
 
 %% open a figure window
 if length(uniqueexts) > 3
-    fh = elf_support_formatA3(49);
+    fh = elf_support_formatA3;
 else
-    fh = elf_support_formatA4(49);
+    fh = elf_support_formatA4;
 end
 if showbutton
     set(fh, 'Name', 'Please select an image format');

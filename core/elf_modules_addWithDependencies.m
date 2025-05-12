@@ -32,6 +32,13 @@ function [mods, anap, plotp] = elf_modules_addWithDependencies(mods)
     for i = 1:length(mods)
         [anap, plotp] = evaluateEnv(anap, plotp, mods{i}, d_comb);
     end
+
+    % Step 4: add the "needsToRunPerEnvironment" flag
+    for i = 1:length(mods)
+        modPerEnvFilename = [mods{i} '_perEnvironment'];
+        modNeedsToRunFilename = [mods{i} '_needsToRun'];
+        anap.(mods{i}).needsToRunPerEnvironment = ~isempty(which(modPerEnvFilename)) && (isempty(which(modNeedsToRunFilename)) || feval(modNeedsToRunFilename, anap));
+    end
 end
 
 function [mods, d] = loadEnvAndAddDependencies(mods, i)

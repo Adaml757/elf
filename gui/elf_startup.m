@@ -1,6 +1,7 @@
-function [para, status, gui] = elf_startup(modules, cbhandle, rootfolder, verbose, useoldfolder)
+function [para, status, gui] = elf_startup(modules, cbhandle, rootfolder, verbose, useoldfolder, figh)
 
 %% defaults
+if nargin < 6 || isempty(figh), figh = []; end
 if nargin < 5 || isempty(useoldfolder), useoldfolder = true; end
 if nargin < 4 || isempty(verbose), verbose = true; end
 if nargin < 3 || isempty(rootfolder), rootfolder = ''; end
@@ -21,7 +22,7 @@ if para.modules{1} ~= "core"
 else
     figName = "ELF";
 end
-gui = elf_maingui(status, para, datasets, exts, cbhandle, figName);
+gui = elf_maingui(status, para, datasets, exts, cbhandle, figName, figh);
 
 %% insert images
 for i = 1:size(status, 1)
@@ -66,7 +67,9 @@ for i = 1:size(status, 1)
     end
     scale   = para.gui.smallsize/size(I, 2);
     I       = imresize(I, scale);
+    warning('off', 'io_correctdng:NoMatrix')
     elf_plot_image(I, info, gui.p(i).ah, '', corr);
+    warning('on', 'io_correctdng:NoMatrix')
     drawnow;
 end
 

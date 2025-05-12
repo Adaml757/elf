@@ -1,6 +1,7 @@
-function gui = elf_maingui(status, para, datasets, exts, cbhandle, figname)
+function gui = elf_maingui(status, para, datasets, exts, cbhandle, figname, figh)
 % Creates the main GUI for elf, allowing the user to process and examine individual data sets
 
+if nargin<7, figh = []; end
 if nargin<6, figname = "ELF"; end
 
 pnum_cols = para.gui.pnum_cols;
@@ -21,7 +22,12 @@ gui.ph          = zeros(numsets, 1);
 
 %% create gui
 % create figure and superpanel
-gui.fh          = elf_support_formatA3(1);
+if isempty(figh)
+    gui.fh = elf_support_formatA3;
+else
+    gui.fh = figh;
+end
+clf(gui.fh);
 set(gui.fh, 'name', figname);
 
 %% browse button
@@ -42,7 +48,7 @@ for i = 1:numsets
     
     % create subpanel
     gui.p(i).ph = uipanel('Units', 'normalized', 'Position', [x y w h], 'parent', gui.sph);
-    stdo        = {'Units', 'normalized', 'parent', gui.p(i).ph, 'callback', cbhandle}; % standard options for gui elements
+    stdo        = {'Units', 'normalized', 'parent', gui.p(i).ph, 'FontSize', 7, 'callback', cbhandle}; % standard options for gui elements
     
     % textbox: data set name
     if isnan(exts{i}) % this happens when there are only raw files in the folder
@@ -53,16 +59,22 @@ for i = 1:numsets
     gui.p(i).tb = uicontrol(stdo{:}, 'Style', 'text', 'Position', [.2 0 .8 .2], 'tag', 'dataset', 'String', datasets{i}, 'userdata', ud);
     
     % buttons
-    gui.p(i).b1     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .85 .09 .1], 'tag', 'maingui_button1', 'String', '1');
-    gui.p(i).b2     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .75 .09 .1], 'tag', 'maingui_button2', 'String', '2');
-    gui.p(i).b3     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .65 .09 .1], 'tag', 'maingui_button3', 'String', '3');
-    gui.p(i).ball   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .45 .18 .1], 'tag', 'maingui_buttonall', 'String', 'Full', 'tooltip', 'Calculate Steps 2, 3 & 4 for this dataset.');
-    gui.p(i).exp    = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .35 .18 .1], 'tag', 'maingui_buttonexp', 'String', 'Explore', 'tooltip', 'Explore the results for individual images.');
-    gui.p(i).b5     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .10 .18 .1], 'tag', 'maingui_button5', 'String', 'Info');
-    gui.p(i).b6     = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 0 .18 .1],   'tag', 'maingui_button6', 'String', 'Show');
-    gui.p(i).range  = uicontrol(stdo{:}, 'Style', 'edit',       'Position', [0 .2 .18 .1],  'tag', 'maingui_range', 'String', 'all', 'backgroundcolor', 'w', 'tooltip', 'Use this field to restrict the range of images to calculate with all functions. Enter a range as, e.g. 1:12 for images 1 to 12 or [1 3 7] for images 1,3 and 7. To use all images, enter all or leave the field empty.');
-    set(gui.p(i).range, 'visible', 'off'); % TODO: Reactivate and use the input
-    
+    gui.p(i).dng    = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .89 .2 .1], 'tag', 'maingui_dng', 'String', 'DNG');
+    gui.p(i).scenes = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .79 .2 .1], 'tag', 'maingui_scenes', 'String', 'Scenes');
+    validModNum = 1;
+    for modNum = length(para.modules):-1:1
+        modName = para.modules{modNum};
+        if para.ana.(modName).needsToRunPerEnvironment
+            gui.p(i).modButtons(modNum) = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .79-0.1*validModNum .2 .1], 'tag', ['maingui_perEnvironment_' modName], 'String', modName);
+            validModNum = validModNum + 1;
+        end
+    end
+
+    gui.p(i).ball   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .37 .2 .1], 'tag', 'maingui_buttonall', 'String', 'Full', 'tooltip', 'Calculate all steps for this dataset.');
+    gui.p(i).exp    = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .27 .2 .1], 'tag', 'maingui_buttonexp', 'String', 'Explore', 'tooltip', 'Explore the results for individual images.');
+    gui.p(i).info   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .11 .2 .1], 'tag', 'maingui_info', 'String', 'Info');
+    gui.p(i).show   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .01 .2 .1],   'tag', 'maingui_show', 'String', 'Show');
+
     % image axes
     gui.p(i).ah = axes('units', 'normalized', 'position', [.2 .2 .8 .8], 'parent', gui.p(i).ph);
     axis(gui.p(i).ah, 'off');

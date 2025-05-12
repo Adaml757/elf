@@ -72,10 +72,10 @@ end
             % new folder has been selected, confirm in a gui and, if necessary, restart GUI
             newFolder = elf_support_fileDialog('Select a new root data folder', 'uigetdir', para.paths.root, 'Select new folder');
             if ~all(newFolder == 0) && exist(newFolder, 'file')
-                [para, status, gui] = elf_startup(modules, @maincb, newFolder, verbose);
+                [para, status, gui] = elf_startup(modules, @maincb, newFolder, verbose, [], src.Parent);
             end
         elseif strcmp(get(src, 'tag'), 'file_reload')
-            [para, status, gui] = elf_startup(modules, @maincb, '', verbose);
+            [para, status, gui] = elf_startup(modules, @maincb, '', verbose, [], src.Parent.Parent);
         else % any other button or key callback
             [status, gui] = elf_callbacks_maingui(modules, src, status, gui, para);
         end

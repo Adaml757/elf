@@ -5,9 +5,9 @@ if nargin < 2
     screenpos = 1;
 end
 if nargin < 1
-    figh = figure;
+    figh = uifigure;
 else
-    figh = figure(fignum);
+    figh = uifigure(fignum);
 end
 
 clf;

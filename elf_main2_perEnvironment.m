@@ -7,7 +7,6 @@ function elf_main2_perEnvironment(dataSet, modules, verbose)
 if nargin < 3, verbose = false; end % verbose determines whether each individual image is plotted during the process, and thumbs are provided at the end
 if nargin < 2 , modules = {}; end
 if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
-
                     
 %% Set up paths and file names; read info, infosum and para
 elf_paths;
@@ -18,13 +17,12 @@ infoSum         = elf_io_readwrite(para, 'loadinfosum');      % loads the old in
 %% Perform per-environment analysis and plotting for all modules
 for i = length(para.modules):-1:1
     % run through modules in reverse order (i.e. dependencies before main modules
-    modPerEnvFilename = [para.modules{i} '_perEnvironment'];
-    if ~isempty(which(modPerEnvFilename))
+    if para.ana.(para.modules{i}).needsToRunPerEnvironment
+        modPerEnvFilename = [para.modules{i} '_perEnvironment'];
         [para, infoSum] = feval(modPerEnvFilename, para, infoSum, verbose);
         elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
     end
 end
-elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
 
 
 
