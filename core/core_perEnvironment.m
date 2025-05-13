@@ -5,16 +5,20 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
     %      which sets the mean luminance to 1/4 of maximum.
     %   Results are saved as TIF/JPG (mean image), XLSX file and PDF/JPG (int)
     %
-    % Typical timing for a 50-scene environment (on ELFPC):
-    %      12.5s mean image + 6s mean int + 2.5s verbose
+    % Inputs:
+    %   para     - ELF parameter structure
+    %   infoSum  - exif structure used for plotting, Projector objects, and gamma-correction
+    %   verbose  - whether to plot filtered images along the way
+    %
+    % Outputs:
+    %   para     - ELF parameter structure 
+    %   infoSum  - exif structure
 
     allFiles  = elf_io_dir(fullfile(para.paths.datapath, para.paths.scenefolder, '*.tif'));
     fNames_im = {allFiles.name}; % collect scene names
 
     if para.ana.calculateMeanImage
-
-                    Logger.log(LogLevel.INFO, '\b\b\b\b\b\b\b\b\b\b\b\b\b\n');
-                    Logger.log(LogLevel.INFO, '----- ELF Step 2: Mean Image -----\n');
+                    Logger.log(LogLevel.INFO, '\n----- ELF Step 2: Mean Image -----\n');
                     Logger.log(LogLevel.INFO, '      Processing environment %s\n', para.paths.dataset);
 
         %% Calculate mean image and thumbs
@@ -78,9 +82,7 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
     end
     
     if para.ana.calculateInt
-
-                    Logger.log(LogLevel.INFO, '\b\b\b\b\b\b\b\b\b\b\b\b\b\n');
-                    Logger.log(LogLevel.INFO, '----- ELF Step 3: Calculating and plotting intensity summary -----\n');
+                    Logger.log(LogLevel.INFO, '\n----- ELF Step 3: Calculating and plotting intensity summary -----\n');
 
         %% Calculate mean intensity
         data    = elf_io_readwrite(para, 'loadres', fNames_im);
