@@ -89,63 +89,63 @@ classdef FileHandler < handle
 
         %% HDR scenes
         function saveScene_mat(obj, sceneName, im)
-            FileHandler.saveToMat(im, obj.Paths.scenefolder, sceneName)
+            obj.saveToMat(im, obj.Paths.scenefolder, sceneName)
         end
 
         function data = loadScene_mat(obj, sceneName)
-            data = FileHandler.loadFromMat(obj.Paths.scenefolder, sceneName);
+            data = obj.loadFromMat(obj.Paths.scenefolder, sceneName);
         end
 
         function saveScene_tif(obj, sceneName, im)
             % Could maybe be jpg to save space. Assumes that input image is normalised to 1
-            FileHandler.saveToIm(im, 16, obj.Paths.scenefolder, sceneName)
+            obj.saveToIm(im, 16, obj.Paths.scenefolder, sceneName)
         end
 
         function data = loadScene_tif(obj, sceneName)
-            data = FileHandler.loadFromIm(obj.Paths.scenefolder, sceneName);
+            data = obj.loadFromIm(obj.Paths.scenefolder, sceneName);
         end
 
         %% Diagnostic images (R: saturation, G: low signal, B: movement between exposures)
         function saveSceneDiag_tif(obj, sceneName, im)
-            FileHandler.saveToIm(im, 8, obj.Paths.diagfolder, sceneName)
+            obj.saveToIm(im, 8, obj.Paths.diagfolder, sceneName)
         end
 
         function data = loadSceneDiag_tif(obj, sceneName)
-            data = FileHandler.loadFromIm(obj.Paths.diagfolder, sceneName);
+            data = obj.loadFromIm(obj.Paths.diagfolder, sceneName);
         end
 
         %% Filtered images
         function saveFilter_mat(obj, sceneName, im)
-            FileHandler.saveToMat(im, obj.Paths.filtfolder, sceneName)
+            obj.saveToMat(im, obj.Paths.filtfolder, sceneName)
         end
 
         function data = loadFilter_mat(obj, sceneName)
-            data = FileHandler.loadFromMat(obj.Paths.filtfolder, sceneName);
+            data = obj.loadFromMat(obj.Paths.filtfolder, sceneName);
         end
 
         function saveFilter_tif(obj, sceneName, ims, fwhms)            
             for i = 1:length(ims)
-                FileHandler.saveToIm(ims{i}, 16, obj.Paths.filtfolder, sceneName, sprintf("_%.1f", fwhms(i)))
+                obj.saveToIm(ims{i}, 16, obj.Paths.filtfolder, sceneName, sprintf("_%.1f", fwhms(i)))
             end
         end
         
         function saveFilterArray_mat(obj, sceneName, im)
-            FileHandler.saveToMat(im, obj.Paths.filtfolder, sceneName, "_array")
+            obj.saveToMat(im, obj.Paths.filtfolder, sceneName, "_array")
         end
 
         function data = loadFilterArray_mat(obj, sceneName)
-            data = FileHandler.loadFromMat(obj.Paths.filtfolder, sceneName, "_array");
+            data = obj.loadFromMat(obj.Paths.filtfolder, sceneName, "_array");
         end
 
         function saveFilterArray_jpg(obj, sceneName, ims, fwhms)            
             for i = 1:length(ims)
-                FileHandler.saveToIm(ims{i}, 8, obj.Paths.filtfolder, sceneName, sprintf("_array_%.1f", fwhms(i)), "jpg")
+                obj.saveToIm(ims{i}, 8, obj.Paths.filtfolder, sceneName, sprintf("_array_%.1f", fwhms(i)), "jpg")
             end
         end
 
         function saveFilterArray_tif(obj, sceneName, ims, fwhms)            
             for i = 1:length(ims)
-                FileHandler.saveToIm(ims{i}, 16, obj.Paths.filtfolder, sceneName, sprintf("_array_%.1f", fwhms(i)))
+                obj.saveToIm(ims{i}, 16, obj.Paths.filtfolder, sceneName, sprintf("_array_%.1f", fwhms(i)))
             end
         end
 
@@ -238,14 +238,14 @@ classdef FileHandler < handle
             data.spatial.gbhist = [];
             data.info.DNGPrivateData = [];
             
-            FileHandler.saveToMat(data, obj.Paths.matfolder, sceneName)
+            obj.saveToMat(data, obj.Paths.matfolder, sceneName)
         end
 
         function data = loadCoreResults(obj, sceneNames)
             % load results mats for each scene in an environment; this is called only once per environment
             % sceneNames has to be a cell array of all file names
             for iScene = length(sceneNames):-1:1
-                data(iScene) = FileHandler.loadFromMat(obj.Paths.matfolder, sceneNames{iScene});
+                data(iScene) = obj.loadFromMat(obj.Paths.matfolder, sceneNames{iScene});
             end
         end
 
@@ -262,11 +262,11 @@ classdef FileHandler < handle
             data.spatial.gbhist = [];
             data.info.DNGPrivateData = [];
             
-            FileHandler.saveToMat(data, obj.Paths.matfolder, obj.Paths.fname_meanres)
+            obj.saveToMat(data, obj.Paths.matfolder, obj.Paths.fname_meanres)
         end
 
         function data = loadMeanCoreResults(obj)
-            data = FileHandler.loadFromMat(obj.Paths.matfolder, obj.Paths.fname_meanres);
+            data = obj.loadFromMat(obj.Paths.matfolder, obj.Paths.fname_meanres);
         end
 
         function saveMeanCoreIntResults(obj, data)
@@ -274,58 +274,47 @@ classdef FileHandler < handle
             data.int.hist = [];
             data.info.DNGPrivateData = [];
             
-            FileHandler.saveToMat(data, obj.Paths.matfolder, obj.Paths.fname_meanres_int)
+            obj.saveToMat(data, obj.Paths.matfolder, obj.Paths.fname_meanres_int)
         end
 
         function data = loadMeanCoreIntResults(obj)
-            data = FileHandler.loadFromMat(obj.Paths.matfolder, obj.Paths.fname_meanres_int);
+            data = obj.loadFromMat(obj.Paths.matfolder, obj.Paths.fname_meanres_int);
         end
 
         %% CORE ELF plots
         function saveElfPlot_jpg(obj, sceneName, fh)
             [~, f] = fileparts(sceneName); 
             fName  = fullfile(obj.Paths.datapath, obj.Paths.matfolder, f + ".jpg");
-            FileHandler.savePlot(fh, fName, "jpg");
+            obj.savePlot(fh, fName, "jpg", true);
         end
 
         function saveElfPlot_pdf(obj, sceneName, fh)
             [~, f] = fileparts(sceneName); 
             fName  = fullfile(obj.Paths.datapath, obj.Paths.matfolder, f + ".pdf");
-            FileHandler.savePlot(fh, fName, "pdf");
+            obj.savePlot(fh, fName, "pdf", true);
         end
 
         function saveMeanElfPlot_jpg(obj, fh)
-            FileHandler.savePlot(fh, obj.Paths.fname_meanelf_jpg, "jpg");
+            obj.savePlot(fh, obj.Paths.fname_meanelf_jpg, "jpg", true);
         end
 
         function saveMeanElfPlot_pdf(obj, fh)
-            FileHandler.savePlot(fh, obj.Paths.fname_meanelf_pdf, "pdf");
+            obj.savePlot(fh, obj.Paths.fname_meanelf_pdf, "pdf", true);
         end
     end
 
 
-    %%%%%%%%%%%%%%%%%%%%
-    %% STATIC METHODS %%
-    %%%%%%%%%%%%%%%%%%%%
-    methods (Static)
-        function data = getField(s, varargin)
-            % extract the first of a number of fields that exists in structure s
-            % This is mainly used to allow for old saved data where fields might have been saved as varinput
 
-            for i = 1:length(varargin)
-                if isfield(s, varargin{i})
-                    data = s.(varargin{i});
-                    return
-                end
-            end
-            error("Field not found");
-        end
-
-        function saveToIm(im, bitDepth, relPath, fName, suffix, format)
+    %%%%%%%%%%%%%%%%%%%%%
+    %% PRIVATE METHODS %%
+    %%%%%%%%%%%%%%%%%%%%%
+    methods (Access=protected)
+        function saveToIm(obj, im, bitDepth, relPath, fName, suffix, format, verbose)
             % Save data to an image file
 
-            if nargin<6, format = "tif"; end
-            if nargin<5, suffix = ""; end
+            if nargin<8, verbose = false; end
+            if nargin<7 || isempty(format), format = "tif"; end
+            if nargin<6, suffix = ""; end
 
             [~, f]      = fileparts(fName);
             fname       = fullfile(obj.Paths.datapath, relPath, f + suffix + "." + format);
@@ -347,44 +336,53 @@ classdef FileHandler < handle
                 otherwise
                     error("Unknown format")
             end
+
+            if verbose
                 Logger.log(LogLevel.INFO, '      Data saved as %s to <a href="matlab:winopen(''%s'')">%s</a>\n', upper(format), fName, fName);
+            end
         end
 
-        function data = loadFromIm(relPath, fName, suffix, format)
+        function data = loadFromIm(obj, relPath, fName, suffix, format)
             % Load data from an image file
 
-            if nargin<4, format = "tif"; end
-            if nargin<3, suffix = ""; end
+            if nargin<5, format = "tif"; end
+            if nargin<4, suffix = ""; end
 
             [~, f]      = fileparts(fName); 
             fname       = fullfile(obj.Paths.datapath, relPath, f + suffix + "." + format);
             data        = imread(fname);
         end
 
-        function saveToMat(im, relPath, fName, suffix)
+        function saveToMat(obj, im, relPath, fName, suffix, verbose)
             % Save data to a binary mat file
 
-            if nargin<4, suffix = ""; end
+            if nargin<6, verbose = false; end
+            if nargin<5, suffix = ""; end
+
             [~, f]      = fileparts(fName);
             fname       = fullfile(obj.Paths.datapath, relPath, f + suffix + ".mat");
             save(fname, 'im', '-v7.3');
+
+            if verbose
                 Logger.log(LogLevel.INFO, '      Data saved as %s to <a href="matlab:winopen(''%s'')">%s</a>\n', "MAT", fName, fName);
+            end
         end
 
-        function data = loadFromMat(relPath, fName, suffix)
+        function data = loadFromMat(obj, relPath, fName, suffix)
             % load data from a binary mat file
 
-            if nargin<3, suffix = ""; end
+            if nargin<4, suffix = ""; end
             [~, f]      = fileparts(fName); 
             fname       = fullfile(obj.Paths.datapath, relPath, f + suffix + ".mat");
             temp        = load(fname);
             data        = FileHandler.getField(temp, "im", "varinput");
         end
 
-        function savePlot(fh, absPath, format)
+        function savePlot(~, fh, absPath, format, verbose)
             % Save a plot to an image of pdf file
 
-            if nargin<3, format = "jpg"; end
+            if nargin<5, verbose = false; end
+            if nargin<4 || isempty(format), format = "jpg"; end
 
             sub_hideui(fh, false); % hide user interface for plotting
             set(fh, 'Units', 'centimeters');
@@ -408,8 +406,10 @@ classdef FileHandler < handle
             
             sub_hideui(fh, true); % re-activate user interface
 
+            if verbose
                 [~, f] = fileparts(absPath);
                 Logger.log(LogLevel.INFO, '      ELF plot for %s saved as %s to <a href="matlab:winopen(''%s'')">%s</a>\n', f, upper(format), absPath, absPath);
+            end
 
             function sub_hideui(fh, activate)
                 % sub function to hide ui buttons for plotting
@@ -429,6 +429,25 @@ classdef FileHandler < handle
 
                 drawnow;
             end
+        end
+    end
+
+
+    %%%%%%%%%%%%%%%%%%%%
+    %% STATIC METHODS %%
+    %%%%%%%%%%%%%%%%%%%%
+    methods (Static)
+        function data = getField(s, varargin)
+            % extract the first of a number of fields that exists in structure s
+            % This is mainly used to allow for old saved data where fields might have been saved as varinput
+
+            for i = 1:length(varargin)
+                if isfield(s, varargin{i})
+                    data = s.(varargin{i});
+                    return
+                end
+            end
+            error("Field not found");
         end % function
     end % methods
 end % classdef

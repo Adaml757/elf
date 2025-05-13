@@ -38,12 +38,12 @@ for i = 1:size(status, 1)
         else
             mask = ['*' exts{i}];
         end
-        scenepath = fullfile(para2.paths.datapath, para2.paths.scenefolder);
+        scenepath = fullfile(para2.fh.Paths.datapath, para2.fh.Paths.scenefolder);
         if isfolder(scenepath) && ~isempty(elf_io_dir(fullfile(scenepath, '*.tif')))
             allims = elf_io_dir(fullfile(scenepath, '*.tif'));
             fname  = fullfile(allims(1).folder, allims(1).name);
         else
-            allims = elf_io_dir(fullfile(para2.paths.datapath, mask));
+            allims = elf_io_dir(fullfile(para2.fh.Paths.datapath, mask));
             allims([allims.isdir]) = [];
             imind  = min([2, length(allims)]);
             fname  = fullfile(allims(imind).folder, allims(imind).name);

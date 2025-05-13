@@ -50,13 +50,13 @@ paths.polarfolder      = "polar";           % subfolder of data folder into whic
 paths.scenefolder      = "scenes";         % subfolder of data folder into which to save the scene images
 paths.diagfolder       = "diag";         % subfolder of data folder into which to save the diagnostic images
 paths.calibfolder      = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');
+para.fh            = FileHandler(paths);
 
 %% if this is called for a specific dataset, store that information
 if ~isempty(dataset)
-    paths.dataset      = dataset;
-    paths.imgformat    = imgformat;
-    paths.datapath     = fullfile(paths.root, paths.dataset);
-    para.fh            = FileHandler(paths);
+    para.fh.Paths.dataset      = dataset;
+    para.fh.Paths.imgformat    = imgformat;
+    para.fh.Paths.datapath     = fullfile(para.fh.Paths.root, para.fh.Paths.dataset);
     para.fh.init();
 end
 
