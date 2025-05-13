@@ -14,12 +14,12 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
     %   para     - ELF parameter structure 
     %   infoSum  - exif structure
 
-    allFiles  = elf_io_dir(fullfile(para.paths.datapath, para.paths.scenefolder, '*.tif'));
+    allFiles  = elf_io_dir(fullfile(para.fh.Paths.datapath, para.fh.Paths.scenefolder, '*.tif'));
     fNames_im = {allFiles.name}; % collect scene names
 
     if para.ana.calculateMeanImage
                     Logger.log(LogLevel.INFO, '\n----- ELF Step 2: Mean Image -----\n');
-                    Logger.log(LogLevel.INFO, '      Processing environment %s\n', para.paths.dataset);
+                    Logger.log(LogLevel.INFO, '      Processing environment %s\n', para.fh.Paths.dataset);
 
         %% Calculate mean image and thumbs
         if verbose
@@ -30,7 +30,7 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
         end
         
         for imnr = 1:length(allFiles)
-            thisIm = elf_io_readwrite(para, 'loadHDR_tif', fNames_im{imnr}); % output is uint16
+            thisIm = para.fh.loadScene_tif(fNames_im{imnr});  % output is uint16
             if imnr==1
                 sumImage = double(thisIm);
             else
@@ -66,7 +66,7 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
             res.fnames_im = fNames_im;
             res.infosum = infoSum;
             res.para = para;
-            res.data = elf_io_readwrite(para, 'loadres', fNames_im);    
+            res.data = para.fh.loadCoreResults(fNames_im);
             set(hi2, 'ButtonDownFcn', @elf_callbacks_montage, 'UserData', res);
         end
         
@@ -77,27 +77,27 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
         elf_plot_image(meanImage, infoSum, p3, 'equirectangular', infoSum.linims);
         
         %% Save output to tif and jpg
-        elf_io_readwrite(para, 'savemeanimg_tif', '', uint16(meanImage));
-        elf_io_readwrite(para, 'savemeanimg_jpg', '', uint16(meanImage));
+        para.fh.saveMeanImage_tif(uint16(meanImage));
+        para.fh.saveMeanImage_jpg(uint16(meanImage));
     end
     
     if para.ana.calculateInt
                     Logger.log(LogLevel.INFO, '\n----- ELF Step 3: Calculating and plotting intensity summary -----\n');
 
         %% Calculate mean intensity
-        data    = elf_io_readwrite(para, 'loadres', fNames_im);
+        data = para.fh.loadCoreResults(fNames_im); %% TODO: Is this needed???
         intMean = elf_analysis_datasetmean(data, 1:length(data), 1, para.plot.datasetMeanType); % Calculate descriptor mean for intensities
-        elf_io_readwrite(para, 'savemeanres_int', '', intMean); % write data mean
+        para.fh.saveMeanCoreIntResults(intMean); % write data mean
         
         %% Write stats into CSV file
-        elf_analysis_writestats(intMean, para.paths.fname_stats);
+        elf_analysis_writestats(intMean, para.fh.Paths.fname_stats);
                 
         %% Plot results
-        h       = elf_plot_intSummary(intMean, uint16(meanImage), infoSum, para.plot, para.paths.dataset, length(fNames_im));
+        h       = elf_plot_intSummary(intMean, uint16(meanImage), infoSum, para.plot, para.fh.Paths.dataset, length(fNames_im));
         
         %% Save output to pdf and tif
-        elf_io_readwrite(para, 'savemeanivep_jpg', '', h.fh);
-        elf_io_readwrite(para, 'savemeanivep_pdf', '', h.fh);
+        para.fh.saveMeanElfPlot_jpg(h.fh);
+        para.fh.saveMeanElfPlot_pdf(h.fh);
     end
 end
 

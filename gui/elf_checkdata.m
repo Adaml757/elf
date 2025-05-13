@@ -26,26 +26,26 @@ imext_preforder = {'.dng', '.tif', '.jpg', '.tiff'};    % These are image format
 imext_rawexts   = {'.nef', '.cr2'};                     % If these are the only images in a folder, the file light will turn orange (could include more raw files that can be transformed into dngs)
 
 %% if no datasets exist, create an error
-if ~exist(para.paths.root, 'file')
+if ~exist(para.fh.Paths.root, 'file')
     warning('Root folder does not exist. Please enter the correct root folder!'); % in <a href="matlab: opentoline(''elf_para.m'',10)">elf_para.m</a>!');
     rootdir = elf_io_localpaths('loadroot', 1);
-    para.paths.root = rootdir;
+    para.fh.Paths.root = rootdir;
 end
 
 if verbose
-    fprintf('Scanning root folder %s\n', para.paths.root);
+    fprintf('Scanning root folder %s\n', para.fh.Paths.root);
 end
 
 %% Step 1: Find all folders in the data path (subfolders will be added later)
-folders  = elf_io_dir(para.paths.root); % read folder content and exclude invalid names (e.g. '$RECYCLE.BIN' and anything starting with .)
+folders  = elf_io_dir(para.fh.Paths.root); % read folder content and exclude invalid names (e.g. '$RECYCLE.BIN' and anything starting with .)
 folders  = folders([folders.isdir]);    % only keep folders
 datasets = {folders.name};
 
 while isempty(datasets) 
     warning('Root folder is empty. Please enter the correct root folder in elf_para.m');
     rootdir = elf_io_localpaths('loadroot', 1);
-    para.paths.root = rootdir;
-    folders  = elf_io_dir(para.paths.root); % read folder content and exclude invalid names (e.g. '$RECYCLE.BIN' and anything starting with .)
+    para.fh.Paths.root = rootdir;
+    folders  = elf_io_dir(para.fh.Paths.root); % read folder content and exclude invalid names (e.g. '$RECYCLE.BIN' and anything starting with .)
     folders  = folders([folders.isdir]); % only keep folders
     datasets = {folders.name};
 end
@@ -72,7 +72,7 @@ i = 1;
 % while there are folders left
 while i <= length(datasets)
     % Check if there are images in it (test dngs, then jpgs, then others)
-    thisfolder  = fullfile(para.paths.root, datasets{i});
+    thisfolder  = fullfile(para.fh.Paths.root, datasets{i});
     content     = elf_io_dir(thisfolder);       % read folder content and exclude invalid names (e.g. '$RECYCLE.BIN' and anything starting with .)
     folders     = content([content.isdir]);     % only keep folders
     folders     = {folders.name};
@@ -141,7 +141,7 @@ while i <= length(datasets)
         info        = elf_info_collect(thisfolder, dominantext{i});   % this contains EXIF information and filenames, verbose==1 means there will be output during system check
         brackets    = elf_hdr_brackets(info, verbose);
         
-        scenefolder = fullfile(thisfolder, para.paths.scenefolder);
+        scenefolder = fullfile(thisfolder, para.fh.Paths.scenefolder);
         
         if ~exist(scenefolder, 'file')
             scenestatus{i} = 'nofolder';
@@ -207,7 +207,7 @@ while i <= length(datasets)
             resstatus{i} = 'na';
         case {'allbutolder', 'all'}
             sceneinfo_valid{i} = sceneinfo{i}(scenevalid{i} > 0);
-            resfolder = fullfile(thisfolder, para.paths.matfolder);
+            resfolder = fullfile(thisfolder, para.fh.Paths.matfolder);
             if ~exist(resfolder, 'file')
                 resstatus{i} = 'nofolder';
             else
@@ -271,7 +271,7 @@ while i <= length(datasets)
         case {'na', 'nofolder', 'none', 'some'}
             meanstatus{i} = 'na';
         case {'allbutolder', 'all'}
-            sumfolder         = para.paths.outputfolder_pub;
+            sumfolder         = para.fh.Paths.outputfolder_pub;
             [~, sumname, ext] = fileparts(datasets{i}); % important for sub-folder datasets
             sumname           = [sumname ext];
             sumnametemplate   = [sumname '_mean_image.jpg'];
@@ -315,7 +315,7 @@ while i <= length(datasets)
         case {'na', 'nofolder', 'none', 'some'}
             sumstatus{i} = 'na';
         case {'allbutolder', 'all'}
-            sumfolder         = para.paths.matfolder;
+            sumfolder         = para.fh.Paths.matfolder;
             [~, sumname, ext] = fileparts(datasets{i}); % important for sub-folder datasets
             sumname           = [sumname ext];
             sumnametemplate   = [sumname '_meanres_int.mat'];
@@ -393,7 +393,7 @@ status(:, 4) = strcmp('older', sumstatus)*2 + strcmp('good', sumstatus)*3;
 
 %% if verbose 0.5 was selected, just output a list of all datasets found (with numbers)
 if listoutput
-    fprintf('\n   Environments found in root folder %s\n', para.paths.root);
+    fprintf('\n   Environments found in root folder %s\n', para.fh.Paths.root);
     for i = 1:length(datasets)
         fprintf('    %4d: %s\n', i, datasets{i});
     end

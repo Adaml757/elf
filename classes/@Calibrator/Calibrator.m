@@ -196,7 +196,7 @@ classdef Calibrator
                     
                     % 1. ISO/EXP/APT 2016 calibration
                     para    = elf_para({}, "noenv");
-                    TEMP    = load(fullfile(para.paths.calibfolder, 'nikon d810', 'absolute.mat'));
+                    TEMP    = load(fullfile(para.fh.Paths.calibfolder, 'nikon d810', 'absolute.mat'));
                     obj.AbsoluteFactor = TEMP.wlcf;
                     
                     % 2. Vignetting
@@ -206,7 +206,7 @@ classdef Calibrator
         
                     % 1. ISO/EXP/APT calibration
                     para    = elf_para({}, "noenv");
-                    TEMP    = load(fullfile(para.paths.calibfolder, obj.CameraString, 'absolute.mat'));
+                    TEMP    = load(fullfile(para.fh.Paths.calibfolder, obj.CameraString, 'absolute.mat'));
                     obj.Acf = TEMP.acf;
                     obj.AbsoluteFactor = TEMP.wlcf;
                                 
@@ -322,7 +322,7 @@ classdef Calibrator
         
                 % Calculate vignetting correction
                 para    = elf_para;
-                fname   = fullfile(para.paths.calibfolder, lower(camstring), 'vign_calib.mat');
+                fname   = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'vign_calib.mat');
                 if isfile(fname)
                     TEMP = load(fname); % holds pf, fitted vignetting-correction function
                     pf = TEMP.pf;
@@ -454,7 +454,7 @@ classdef Calibrator
             else % load from file
                 Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
                 para   = elf_para;
-                fname  = fullfile(para.paths.calibfolder, lower(camstring), 'rgb_calib.mat');
+                fname  = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
                 if isfile(fname)
                     TEMP    = load(fname, 'colmat');  
                     colmat  = TEMP.colmat;
@@ -485,7 +485,7 @@ classdef Calibrator
             else % load from file
                 Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
                 para  = elf_para;
-                fname = fullfile(para.paths.calibfolder, lower(camstring), 'rgb_calib.mat');
+                fname = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
                 if isfile(fname)
                     TEMP    = load(fname, 'col');            
                     col     = TEMP.col;

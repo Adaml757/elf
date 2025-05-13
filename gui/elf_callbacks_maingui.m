@@ -50,7 +50,7 @@ else
                 elf_main1_perScene(dataset, modules, imgformat);
                 refresh = 1;
             case 'maingui_info'
-                elf_gui_chooseext(fullfile(para.paths.root, dataset), false);
+                elf_gui_chooseext(fullfile(para.fh.Paths.root, dataset), false);
                 refresh = 0;
             case 'maingui_show'
                 elf_main4_display(dataset, modules);
@@ -61,6 +61,9 @@ else
                 refresh = 1;
             case 'maingui_buttonexp'
                 elf_mainX_explore(dataset, modules);
+                refresh = 0;
+            case 'maingui_buttondiag'
+                elf_mainX_exploreDiag(dataset, modules);
                 refresh = 0;
             case 'file_refresh'
                 refresh = 1;
@@ -88,12 +91,12 @@ else
                 if ~isempty(modName{1})
                     modName = modName{1}{1};
                     thisPara = elf_para(modules, '', dataset);
-                    thisPara = elf_para_update(thisPara);                  % Combine old parameter file with potentially changed information in current config
-                    infoSum  = elf_io_readwrite(thisPara, 'loadinfosum');      % loads the old infosum file (which contains projection information, and linims)
+                    thisPara = elf_para_update(thisPara);   % Combine old parameter file with potentially changed information in current config
+                    infoSum  = para.fh.loadInfoSum();       % loads the old infosum file (which contains projection information, and linims)
                     
                     modPerEnvFilename = [modName '_perEnvironment'];
                     [para, infoSum] = feval(modPerEnvFilename, thisPara, infoSum, verbose);
-                    elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
+                    para.fh.saveInfoSum(para, infoSum); % saves infosum AND para for use in later stages
                     refresh = 1;
                 else
                     error("Unknown button")

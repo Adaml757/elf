@@ -27,7 +27,7 @@ function res = core_perScene(para, res, im_cal, im_disp, infoSum, iScene, nScene
         end
     
         %% Plot summary figure for this scene
-        dataSetName = strrep(para.paths.dataset, '\', '\\'); % On PC, paths contain backslashes. Replace them by double backslashes to avoid a warning
+        dataSetName = strrep(para.fh.Paths.dataset, '\', '\\'); % On PC, paths contain backslashes. Replace them by double backslashes to avoid a warning
         name        = sprintf('%s, scene #%d of %d', dataSetName, iScene, nScenes);
         h           = elf_plot_intSummary(res, im_disp, infoSum, para.plot, name, nScenes);
         set(h.fh, 'Name', sprintf('Scene #%d of %d', iScene, nScenes));

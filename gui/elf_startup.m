@@ -26,9 +26,9 @@ gui = elf_maingui(status, para, datasets, exts, cbhandle, figName, figh);
 
 %% insert images
 for i = 1:size(status, 1)
-    para2 = elf_para(modules, para.paths.root, datasets{i});
+    para2 = elf_para(modules, para.fh.Paths.root, datasets{i});
     if status(i, 3)
-        fname   = para2.paths.fname_meanimg_jpg;
+        fname   = para2.fh.Paths.fname_meanimg_jpg;
         info    = [];
         corr    = false;
     else

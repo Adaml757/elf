@@ -11,8 +11,8 @@ if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset na
 %% Set up paths and file names; read info, infosum and para
 elf_paths;
 para            = elf_para(modules, '', dataSet);
-para            = elf_para_update(para);                      % Combine old parameter file with potentially changed information in current config
-infoSum         = elf_io_readwrite(para, 'loadinfosum');      % loads the old infosum file (which contains projection information, and linims)
+para            = elf_para_update(para);          % Combine old parameter file with potentially changed information in current config
+infoSum         = para.fh.loadInfoSum();          % Loads the old infosum file (which contains projection information, and linims)
 
 %% Perform per-environment analysis and plotting for all modules
 for i = length(para.modules):-1:1
@@ -20,7 +20,7 @@ for i = length(para.modules):-1:1
     if para.ana.(para.modules{i}).needsToRunPerEnvironment
         modPerEnvFilename = [para.modules{i} '_perEnvironment'];
         [para, infoSum] = feval(modPerEnvFilename, para, infoSum, verbose);
-        elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
+        para.fh.saveInfoSum(para, infoSum); % saves infosum AND para for use in later stages
     end
 end
 

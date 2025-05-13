@@ -22,41 +22,42 @@ mayusegpu = false; % this flag can be used to manually (de-)activate use of GPU 
 
 if ~isa(rootdir, "string") && any(isnan(rootdir)) || strcmp(rootdir, 'reset')
     % reset and prompt for all local input/output folders
-    para.paths.root             = elf_io_localpaths('loadroot', true);
-    para.paths.outputfolder     = elf_io_localpaths('loadoutput', true);
-    para.paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub', true);
+    paths.root             = elf_io_localpaths('loadroot', true);
+    paths.outputfolder     = elf_io_localpaths('loadoutput', true);
+    paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub', true);
 elseif any(isempty(rootdir)) || strcmp(rootdir, 'noenv')
     % use saved input/output folders
-    para.paths.root             = elf_io_localpaths('loadroot', false);
-    para.paths.outputfolder     = elf_io_localpaths('loadoutput', false);
-    para.paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub', false);
+    paths.root             = elf_io_localpaths('loadroot', false);
+    paths.outputfolder     = elf_io_localpaths('loadoutput', false);
+    paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub', false);
 elseif strcmp(rootdir, 'prompt') || ~exist(rootdir, 'file')
     % prompt for data folder, but use saved output folders
-    para.paths.root             = elf_io_localpaths('loadroot', true);
-    para.paths.outputfolder     = elf_io_localpaths('loadoutput', false);
-    para.paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub', false);
+    paths.root             = elf_io_localpaths('loadroot', true);
+    paths.outputfolder     = elf_io_localpaths('loadoutput', false);
+    paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub', false);
 else
     % if a directory was specified, and it exists, use it and save it as the new default
-    para.paths.root = rootdir;
+    paths.root = rootdir;
     elf_io_localpaths('saveroot', 0, rootdir);
-    para.paths.outputfolder     = elf_io_localpaths('loadoutput');
-    para.paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub');
+    paths.outputfolder     = elf_io_localpaths('loadoutput');
+    paths.outputfolder_pub = elf_io_localpaths('loadoutput_pub');
 end
 
 %% define further folder structure
-para.paths.matfolder        = "mat";            % subfolder of data folder into which to save the .mat descriptor files (and individual .pdf files, if activated) 
-para.paths.filtfolder       = "filt";           % subfolder of data folder into which to save the filtered images
-para.paths.polarfolder      = "polar";           % subfolder of data folder into which to save the filtered images
-para.paths.scenefolder      = "scenes";         % subfolder of data folder into which to save the scene images
-para.paths.diagfolder       = "diag";         % subfolder of data folder into which to save the diagnostic images
-para.paths.calibfolder      = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');
+paths.matfolder        = "mat";            % subfolder of data folder into which to save the .mat descriptor files (and individual .pdf files, if activated) 
+paths.filtfolder       = "filt";           % subfolder of data folder into which to save the filtered images
+paths.polarfolder      = "polar";           % subfolder of data folder into which to save the filtered images
+paths.scenefolder      = "scenes";         % subfolder of data folder into which to save the scene images
+paths.diagfolder       = "diag";         % subfolder of data folder into which to save the diagnostic images
+paths.calibfolder      = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');
 
 %% if this is called for a specific dataset, store that information
 if ~isempty(dataset)
-    para.paths.dataset      = dataset;
-    para.paths.imgformat    = imgformat;
-    para.paths.datapath     = fullfile(para.paths.root, para.paths.dataset);
-    para                    = elf_io_readwrite(para, 'createfilenames');
+    paths.dataset      = dataset;
+    paths.imgformat    = imgformat;
+    paths.datapath     = fullfile(paths.root, paths.dataset);
+    para.fh            = FileHandler(paths);
+    para.fh.init();
 end
 
 %% load .env files

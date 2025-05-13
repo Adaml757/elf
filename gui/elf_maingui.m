@@ -34,7 +34,7 @@ set(gui.fh, 'name', figname);
 uicontrol('Units', 'normalized', 'parent', gui.fh, 'callback', cbhandle, 'Style', 'pushbutton', 'Position', [0 1-browseheight 0.05 browseheight], 'tag', 'maingui_folderbrowse', ...
         'string', 'Browse');
 uicontrol('Units', 'normalized', 'parent', gui.fh, 'Style', 'edit', 'Position', [0.054 1-browseheight 0.946 browseheight], 'tag', 'maingui_folderedit', ...
-        'string', para.paths.root, 'horizontalalignment', 'left', 'enable', 'inactive'); %, 'backgroundcolor', [0 0 0]);
+        'string', para.fh.Paths.root, 'horizontalalignment', 'left', 'enable', 'inactive'); %, 'backgroundcolor', [0 0 0]);
 
 %% Superpanel
 gui.sph         = uipanel('Units', 'normalized', 'Position', [0 1-superp_height-browseheight 1-sliderwidth superp_height], 'parent', gui.fh, 'tag', 'maingui_superpanel');
@@ -71,7 +71,8 @@ for i = 1:numsets
     end
 
     gui.p(i).ball   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .37 .2 .1], 'tag', 'maingui_buttonall', 'String', 'Full', 'tooltip', 'Calculate all steps for this dataset.');
-    gui.p(i).exp    = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .27 .2 .1], 'tag', 'maingui_buttonexp', 'String', 'Explore', 'tooltip', 'Explore the results for individual images.');
+    gui.p(i).exp    = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .27 .1 .1], 'tag', 'maingui_buttonexp', 'String', 'Exp', 'tooltip', 'Explore the results for individual images.');
+    gui.p(i).diag   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [.1 .27 .1 .1], 'tag', 'maingui_buttondiag', 'String', 'Diag', 'tooltip', 'Explore the results for individual images.');
     gui.p(i).info   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .11 .2 .1], 'tag', 'maingui_info', 'String', 'Info');
     gui.p(i).show   = uicontrol(stdo{:}, 'Style', 'pushbutton', 'Position', [0 .01 .2 .1],   'tag', 'maingui_show', 'String', 'Show');
 

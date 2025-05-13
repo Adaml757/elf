@@ -17,7 +17,7 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
     switch lower(camstring)
         case 'nikon d810'
             para = elf_para;
-            calibfilefolder = para.paths.calibfolder; % Where to find the finished calibration files
+            calibfilefolder = para.fh.Paths.calibfolder; % Where to find the finished calibration files
             load(fullfile(calibfilefolder, 'nikon d810', 'noise.mat'), 'rf_mean'); 
 
             blackLevels = 600 * ones(length(iso), 3);

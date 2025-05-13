@@ -55,7 +55,7 @@ switch handletype
         % a panel object was provided. Clear the panel and create axes.
         delete(get(h, 'Children'));
         switch proj
-            case {'undefined', 'default', 'equisolid', 'zone', 'filt1', 'filt10'}
+            case {'undefined', 'default', 'equisolid', 'zone', 'filt1', 'filt10', 'equisolid_HDR', 'equisolid_diag'}
                 % No axes needed
                 ha = axes('Parent', h, 'Position', [0 0 1 1], 'Units', 'normalized');
             otherwise
@@ -94,14 +94,22 @@ switch proj
     case {'undefined'}
         axis(ha, 'off');
         
-    case {'equisolid', 'default'}
+    case {'equisolid', 'default', 'equisolid_HDR'}
         % plot grid
         hold(ha, 'on');
-        plot(ha, I_info.grids.scene.fisheye.x, I_info.grids.fisheye.y, 'k:');
+        plot(ha, I_info.grids.scene.fisheye.x, I_info.grids.scene.fisheye.y, 'k:');
         
         % remove axis
         axis(ha, 'off');
         
+    case {'equisolid_diag'}
+        % plot grid
+        hold(ha, 'on');
+        plot(ha, I_info.grids.scene.fisheye.x, I_info.grids.scene.fisheye.y, 'w:');
+        
+        % remove axis
+        axis(ha, 'off');
+
     case 'squashed'
         % plot grid
         hold(ha, 'on');

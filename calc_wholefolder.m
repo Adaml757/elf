@@ -32,10 +32,10 @@ fprintf('\n\n\n------------------------------------------------\n');
 fprintf('------------------------------------------------\n');
 fprintf('\tCALC_WHOLEFOLDER\n');
 fprintf('------------------------------------------------\n');
-fprintf('\tResults for data folder %s\n', para.paths.root);
+fprintf('\tResults for data folder %s\n', para.fh.Paths.root);
 fprintf('\t%d out of %d data sets were successfully calculated.\n', nnz(res), length(res));
-fprintf('\tDetailed results were saved to %s\n', para.paths.outputfolder);
-fprintf('\tSmall-file results were saved to %s\n', para.paths.outputfolder_pub);
+fprintf('\tDetailed results were saved to %s\n', para.fh.Paths.outputfolder);
+fprintf('\tSmall-file results were saved to %s\n', para.fh.Paths.outputfolder_pub);
 if nnz(res)<length(res)
     fprintf('\t\nThe following errors were encountered:\n');
     errnums = find(res==0)';

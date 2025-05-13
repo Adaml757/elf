@@ -3,11 +3,6 @@ function elf_main1_perScene(dataSet, modules, imgFormat)
 % scenes, and calculates HDR representations of these scenes as mat for later contrast calculations and as tif for the mean image. 
 % Per-scene analysis is performed for all loaded modules.
 %
-% Uses: elf_paths, elf_para, elf_info_collect, 
-%       elf_info_summarise, elf_hdr_brackets, 
-%       elf_io_readwrite, elf_hdr_calcHDR, elf_io_correctdng, elf_io_imread
-%       elf_analysis_int, elf_support_formatA4l
-%
 % Loads files: DNG image files in data folder
 % Saves files: HDR image files in scene subfolder, *.mat files in scenes subfolder, per-scene intensity results in mat folder
 
@@ -22,7 +17,7 @@ if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset na
 
 %% Set up paths and file names; read info, infosum and para, calculate sets
 para            = elf_para(modules, '', dataSet, imgFormat);
-info            = elf_info_collect(para.paths.datapath, imgFormat);   % this contains EXIF information and filenames, verbose==1 means there will be output during system check
+info            = elf_info_collect(para.fh.Paths.datapath, imgFormat);   % this contains EXIF information and filenames, verbose==1 means there will be output during system check
 infoSum         = elf_info_summarise(info, false);                    % summarise EXIF information for this dataset. This will be saved for later use below
 infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linear images are used, correct for that during plotting
 scenes          = elf_hdr_brackets(info);                             % determine which images are part of the same scene
@@ -73,7 +68,7 @@ switch para.ana.targetProjection
     otherwise
         error("Unknown target projection: %s", para.ana.targetProjection);
 end
-elf_io_readwrite(para, 'saveinfosum', [], infoSum); % saves infosum AND para for use in later stages
+para.fh.saveInfoSum(para, infoSum); % saves infosum AND para for use in later stages
 
 %% Step 1: Unwarp images and calculate HDR scenes
 
@@ -143,15 +138,15 @@ for iScene = 1:size(scenes, 1)
     % TIF is not strictly necessary, but a good diagnostic. 
     % Cost of saving it: ~300GB/6TB disk space, 2s per scene for calculation/saving = 6.7h extra for the current ~12000 scenes.
     % Cost of instead recalculating it in main2: 1.5s per scene for loading/converting = 5h extra ".
-    elf_io_readwrite(para, 'saveHDR_mat', sprintf('scene%03d', iScene), im_HDR_cal);
+    para.fh.saveScene_mat(sprintf('scene%03d', iScene), im_HDR_cal);
     I = elf_io_correctdng(im_HDR_cal, info(setStart), 'bright');
 
     if para.ana.saveSceneTifs
-        elf_io_readwrite(para, 'saveHDR_tif', sprintf('scene%03d', iScene), I);
+        para.fh.saveScene_tif(sprintf('scene%03d', iScene), I);
     end
 
     if para.ana.saveDiagnosticTifs
-        elf_io_readwrite(para, 'savediag_tif', sprintf('scene%03d', iScene), im_diag);
+        para.fh.saveSceneDiag_tif(sprintf('scene%03d', iScene), im_diag);
     end
 
     %% Perform per-scene analysis and plotting for all modules
@@ -165,7 +160,7 @@ for iScene = 1:size(scenes, 1)
 
     %% save results output files
     sceneName = sprintf('scene%03d', iScene);
-    elf_io_readwrite(para, 'saveres', sceneName, res);
+    para.fh.saveCoreResults(sceneName, res);
 
                     if iScene == 1
                         Logger.log(LogLevel.INFO, '\tStarting scene-by-scene calibration, HDR creation and analysis. Projected time: %.2f minutes.\n', toc/60*size(scenes, 1));
@@ -178,7 +173,7 @@ for iScene = 1:size(scenes, 1)
 end
 
                     Logger.log(LogLevel.INFO, '\b\t\tdone.\n');
-                    saveFolder = fullfile(para.paths.root, dataSet, para.paths.scenefolder);
+                    saveFolder = fullfile(para.fh.Paths.root, dataSet, para.fh.Paths.scenefolder);
                     Logger.log(LogLevel.INFO, '\tSummary: All HDR scenes for environment %s calculated and saved to <a href="matlab:winopen(''%s'')">%s</a>.\n\n', dataSet, saveFolder, saveFolder);
 
 

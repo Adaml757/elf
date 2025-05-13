@@ -70,7 +70,7 @@ end
     function maincb(src, ~)
         if strcmp(get(src, 'tag'), 'maingui_folderbrowse')
             % new folder has been selected, confirm in a gui and, if necessary, restart GUI
-            newFolder = elf_support_fileDialog('Select a new root data folder', 'uigetdir', para.paths.root, 'Select new folder');
+            newFolder = elf_support_fileDialog('Select a new root data folder', 'uigetdir', para.fh.Paths.root, 'Select new folder');
             if ~all(newFolder == 0) && exist(newFolder, 'file')
                 [para, status, gui] = elf_startup(modules, @maincb, newFolder, verbose, [], src.Parent);
             end
