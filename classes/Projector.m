@@ -9,7 +9,7 @@ classdef Projector
     %
     % See also: Calibrator
 
-    properties(SetAccess=immutable)
+    properties (SetAccess=immutable)
         Size(1,3) double             % [height, width, number of channels] of the original fisheye image
         ProjectionType(1,1) string   % type of fisheye projection in the original image, e.g. "equisolid"
         ErAzi(1,3) double            % azimuth vector (as [start step end]) for the equirectangular projection; e.g. -90:0.1:90
@@ -19,7 +19,7 @@ classdef Projector
         CorrFocalLength(1,1) double  % the "effective" focal length (real focal length * a correction factor to match the observed image circle)
     end
 
-    properties(Dependent,Transient)
+    properties (Dependent,Transient)
         RectSize(1,3) double         % [height, width, number of channels] size of the equirectangular image
     end
     
@@ -410,7 +410,15 @@ classdef Projector
             % The projected image can be calculated as 
             % im_proj = Projector.apply(projection_ind, im, proj.Size)
 
-            Logger.log(LogLevel.INFO, '\tCalculating projection of photoreceptor array onto fisheye image...\n');
+            % Check if this already exists in the buffer
+            projection_ind = Buffer.retrieve("Array2ImageProjection", {obj, prArray});
+            if ~isempty(projection_ind)
+                    Logger.log(LogLevel.INFO, '\tProjection found in buffer...loaded.\n');
+                return
+            end
+
+            % Calculate projection
+                Logger.log(LogLevel.INFO, '\tCalculating projection of photoreceptor array onto fisheye image...\n');
             [w_grid, h_grid] = meshgrid(1:obj.Size(2), 1:obj.Size(1)); % grid of desired output image coordinates
             [x, y, z] = obj.pix2cart(w_grid(:), h_grid(:));
             xyz = [x(:) y(:) z(:)]';
@@ -436,6 +444,10 @@ classdef Projector
             try close(wbh); end
             projection_ind = obj.sub2ind2(size(prArray), projection_ind);
             Logger.log(LogLevel.INFO, '\bdone.\n');
+
+            % Store everything in the buffer
+            Buffer.store("Array2ImageProjection", {obj, prArray}, projection_ind);
+                Logger.log(LogLevel.INFO, '\tProjection stored in buffer.\n');
         end
 
         function [projection_ind, newProjector] = crop2ImageCircle(obj, maxRadius_deg)
