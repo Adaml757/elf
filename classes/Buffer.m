@@ -29,6 +29,14 @@ classdef Buffer < handle
                 bufferedObj = [];
             end
         end
+
+        function totalSize_bytes = checkMemory()
+            totalSize_bytes = byteSize(Buffer.B.Name) + byteSize(Buffer.B.Dependencies) + byteSize(Buffer.B.Object);
+        end
     end
 end
 
+function bs = byteSize(a) %#ok<INUSD>
+    temp = whos("a");
+    bs = temp.bytes;
+end
