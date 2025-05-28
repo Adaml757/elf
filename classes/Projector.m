@@ -186,29 +186,37 @@ classdef Projector
     %   rotation - angle (in degrees) by which the image should be rotated clockwise around the optical axis before processing (Use 90 or -90 for portrait images)
     
     methods        
-        function [X, Y, Z] = pix2cart(obj, w, h, rotation)
+        % function [X, Y, Z] = pix2cart(obj, w, h, rotation)
+        function [X, Y, Z] = pix2cart(obj, w, h, optAx, rotAroundOptAx)
             % PIX2CART translates w/h pixel positions into X,Y,Z on a unit sphere
             %
+            % optAx is a ViewDir object or the [az el] in degrees of the optical axis, e.g. 
+            %   [0 90] for an upward-facing image
+            %   [0 0] for an East-facing image
+            %   [90 0] for an North-facing image
+            % rotAroundOptAx is the CW angle (in degrees) by which the image must be rotated around its optical axis to have the top facing up (or westward for an upward-facing image)
+
             % Usage example:
             % [w_grid, h_grid] = meshgrid(1:I_info.Width, 1:I_info.Height);
             % [X, Y, Z] = obj.pix2cart(w_grid, h_grid)
             %% TODO: ADD a vector for the optical axis (and one for orientation?)
-
-            if nargin<4 || isempty(rotation), rotation = [0 0]; end
-            if isscalar(rotation), rotation = [rotation 0]; end
+            
+            if nargin<4 || isempty(optAx), optAx = ViewDir.H; end
+            if nargin<5 || isempty(rotAroundOptAx), rotAroundOptAx = 0; end
+            if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
 
             h_rel = h-obj.MidPoint(1);
             w_rel = w-obj.MidPoint(2);
             R_pix = sqrt(h_rel.^2 + w_rel.^2); % each point's radial excentricity on the sensor (in pixels)
             R_mm  = R_pix / obj.PixPerMM;      % each point's radial excentricity on the sensor (in mm)
-            gamma = atan2d(h_rel, w_rel) - rotation(1); % angle around the optical axis
+            gamma = atan2d(h_rel, w_rel) - rotAroundOptAx; % angle around the optical axis
 
             theta_deg = obj.r2theta(R_mm);           % angle to the optical axis
 
             r_yz = sind(theta_deg);
             
             X = cosd(theta_deg);
-            Y = r_yz .* cosd(gamma);
+            Y = -r_yz .* cosd(gamma); % This minus makes sure that low image indices are mapped high on the y-axis
             Z = r_yz .* -sind(gamma); % This minus makes sure that low image indices are mapped onto high-elevation points
 
             X(~isreal(X)) = NaN; % set to NaN some points far out of the image circle
@@ -217,7 +225,8 @@ classdef Projector
             Y = real(Y);
             Z(~isreal(Z)) = NaN; % set to NaN some points far out of the image circle
             Z = real(Z);
-            [X, Y, Z] = elf_support_rot3D(X, Y, Z, rotation(2), 'y');
+            [X, Y, Z] = elf_support_rot3D(X, Y, Z, -optAx(2), 'y');
+            [X, Y, Z] = elf_support_rot3D(X, Y, Z, optAx(1), 'z');
         end
 
         function [w, h] = cart2pix(obj, X, Y, Z, rotation, roundIt)
@@ -274,7 +283,7 @@ classdef Projector
             % PIX2PIX translates w/h pixel positions from one fisheye projection to another
 
             if nargin<5 || isempty(rotation), rotation=0; end
-            [X, Y, Z]    = obj.pix2cart(w, h, rotation);
+            [X, Y, Z]    = obj.pix2cart(w, h, [], rotation);
             [w2, h2]     = targetProjector.cart2pix(X, Y, Z);
         end
     end
