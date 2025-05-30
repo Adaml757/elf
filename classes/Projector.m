@@ -38,28 +38,26 @@ classdef Projector
             % PROJECTOR Construct an instance of this class directly
             % obj = Projector(imSize, projectionType, [erAzi, erEle, midPoint, pixPerMM, corrFocalLength])
             %
-            % Also see: Projector.fromInfoStructs, Projector.fromImageCircle
+            % See also: Projector.fromInfoStructs, Projector.fromImageCircle
 
-            obj.Size = imSize(:)'; % make sure size is always a row vector
+            arguments
+                imSize (1,3) double
+                projectionType (1,1) string
+                erAzi (1,3) double = [-90, 0.1, 90]
+                erEle (1,3) double = [90, -0.1, -90]
+                midPoint (1,2) double = [(imSize(1)+1)/2, (imSize(2)+1)/2]
+                pixPerMM (1,1) double = NaN
+                corrFocalLength (1,1) double = 8
+            end
+
+            obj.Size = imSize;
             obj.ProjectionType = projectionType;
-
-            if nargin<3 || isempty(erAzi), erAzi = [-90, 0.1, 90]; end
             obj.ErAzi = erAzi;
-
-            if nargin<4 || isempty(erEle), erEle = [90, -0.1, -90]; end
             obj.ErEle = erEle;
-
-            if nargin<5 || isempty(midPoint)
-                midPoint = [(imSize(1)+1)/2, (imSize(2)+1)/2];
-            end
             obj.MidPoint = midPoint;
-
-            if nargin<7 || isempty(corrFocalLength)
-                corrFocalLength = 8;
-            end
             obj.CorrFocalLength = corrFocalLength;
 
-            if nargin<6 || isempty(pixPerMM)
+            if isnan(pixPerMM)
                 % set pixPerMM to create a filled image
                 shortSide = min(imSize(1:2));
                 imageCircleRadius = obj.theta2r(90);
@@ -85,9 +83,12 @@ classdef Projector
             %                   .HCorr - correction for centre in width (obtained from calibration for imperfect lens)
             %   erAzi, erEle - output angle ranges defining the desired grid of the projected images (default [-90, 0.1, 90], and [90, -0.1, -90])
 
-
-            if nargin<4 || isempty(erEle), erEle = [90, -0.1, -90]; end
-            if nargin<3 || isempty(erAzi), erAzi = [-90, 0.1, 90]; end
+            arguments
+                I_info (1,1) struct
+                projInfo (1,1) struct
+                erAzi (1,3) double = [-90, 0.1, 90]
+                erEle (1,3) double = [90, -0.1, -90]
+            end
 
             Logger.log(LogLevel.INFO, 'Creating a Projector object for %s camera\n', I_info.Model{1})
 
@@ -108,19 +109,23 @@ classdef Projector
             %PROJECTOR.FROMIMAGECIRCLE Construct an instance of this class by cropping an old class to a certain image circle radius (in degrees)
             %
             % Also see: Projector.fromInfoStructs, Projector
+            
+            arguments
+                oldProj (1,1) Projector
+                imageCircleRadius_deg (1,1) double
+            end
 
-            pixPerMM = oldProj.PixPerMM;
-            projectionType = oldProj.ProjectionType;
-            erAzi = oldProj.ErAzi;
-            erEle = oldProj.ErEle;
-            corrFocalLength = oldProj.CorrFocalLength;
-
-            d_pix = ceil(2*oldProj.theta2r(imageCircleRadius_deg)*pixPerMM);
-
+            d_pix = ceil(2*oldProj.theta2r(imageCircleRadius_deg)*oldProj.PixPerMM);
             imSize = [d_pix, d_pix, oldProj.Size(3)];
             midPoint = [(imSize(1)+1)/2; (imSize(2)+1)/2];
            
-            obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength);
+            obj = Projector(imSize, ...
+                            oldProj.ProjectionType, ...
+                            oldProj.ErAzi, ...
+                            oldProj.ErEle, ...
+                            midPoint, ...
+                            oldProj.PixPerMM, ...
+                            oldProj.CorrFocalLength);
         end
     end
 
@@ -180,44 +185,54 @@ classdef Projector
     %   RECT2CART -> use built-in sph2cart and deg2rad
 
     % Input/Outputs for all methods
-    %   w, h     - x/y image coordinatesin pixels, e.g. defining the desired grid of a projected image along image width and height, respectively
+    %   w, h     - x/y image coordinates in pixels, e.g. defining the desired grid of a projected image along image width and height, respectively
     %   X, Y, Z  - cartesian coordinates in arbitrary units, e.g. on a unit sphere surrounding the camera
     %   azi, ele - azimuth/elevation in degrees
-    %   rotation - angle (in degrees) by which the image should be rotated clockwise around the optical axis before processing (Use 90 or -90 for portrait images)
+    %   rotation - angle (in degrees) by which the image needs to be rotated clockwise around the optical axis to achieve the desired orientation (Use 90 or -90 for portrait images)
     
+    % optAx is a ViewDir object or the [az el] in degrees of the optical axis, e.g. 
+    %   [0 90] for an upward-facing image
+    %   [0 0] for an East-facing image
+    %   [90 0] for an North-facing image
+    % rotAroundOptAx is the CW angle (in degrees) by which the image must be rotated 
+    %   around its optical axis to have the top facing up 
+    %   (or westward for an upward-facing image)
+
     methods        
         % function [X, Y, Z] = pix2cart(obj, w, h, rotation)
         function [X, Y, Z] = pix2cart(obj, w, h, optAx, rotAroundOptAx)
             % PIX2CART translates w/h pixel positions into X,Y,Z on a unit sphere
             %
-            % optAx is a ViewDir object or the [az el] in degrees of the optical axis, e.g. 
-            %   [0 90] for an upward-facing image
-            %   [0 0] for an East-facing image
-            %   [90 0] for an North-facing image
-            % rotAroundOptAx is the CW angle (in degrees) by which the image must be rotated around its optical axis to have the top facing up (or westward for an upward-facing image)
-
-            % Usage example:
-            % [w_grid, h_grid] = meshgrid(1:I_info.Width, 1:I_info.Height);
-            % [X, Y, Z] = obj.pix2cart(w_grid, h_grid)
-            %% TODO: ADD a vector for the optical axis (and one for orientation?)
+            % [X, Y, Z] = pix2cart(obj, [w, h, optAx, rotAroundOptAx])
             
-            if nargin<4 || isempty(optAx), optAx = ViewDir.H; end
-            if nargin<5 || isempty(rotAroundOptAx), rotAroundOptAx = 0; end
-            if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
+            arguments
+                obj (1,1) Projector
+                w double = []
+                h double = []
+                optAx = ViewDir.H
+                rotAroundOptAx (1,1) double = 0
+            end
 
+            if isempty(optAx), optAx = ViewDir.H; end
+            if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
+            if isempty(w) || isempty(h)
+                [w, h] = meshgrid(1:obj.Size(2), 1:obj.Size(1));
+            end                
+
+            %
             h_rel = h-obj.MidPoint(1);
             w_rel = w-obj.MidPoint(2);
             R_pix = sqrt(h_rel.^2 + w_rel.^2); % each point's radial excentricity on the sensor (in pixels)
             R_mm  = R_pix / obj.PixPerMM;      % each point's radial excentricity on the sensor (in mm)
-            gamma = atan2d(h_rel, w_rel) - rotAroundOptAx; % angle around the optical axis
+            gamma = atan2d(-h_rel, w_rel) - rotAroundOptAx; % angle around the optical axis
 
             theta_deg = obj.r2theta(R_mm);           % angle to the optical axis
 
             r_yz = sind(theta_deg);
             
             X = cosd(theta_deg);
-            Y = -r_yz .* cosd(gamma); % This minus makes sure that low image indices are mapped high on the y-axis
-            Z = r_yz .* -sind(gamma); % This minus makes sure that low image indices are mapped onto high-elevation points
+            Y = - r_yz .* cosd(gamma); % This minus makes sure that low image indices are mapped high on the y-axis
+            Z = r_yz .* sind(gamma); % No minus makes sure that low image indices are mapped onto high-elevation points
 
             X(~isreal(X)) = NaN; % set to NaN some points far out of the image circle
             X = real(X);
@@ -229,62 +244,96 @@ classdef Projector
             [X, Y, Z] = elf_support_rot3D(X, Y, Z, optAx(1), 'z');
         end
 
-        function [w, h] = cart2pix(obj, X, Y, Z, rotation, roundIt)
+        function [w, h] = cart2pix(obj, X, Y, Z, optAx, rotAroundOptAx, roundIt)
             % CART2PIX translates X/Y/Z positions into w/h pixel positions in the image
             %
-            % [w, h] = obj.cart2pix(X, Y, Z, rotation, roundIt)
+            % [w, h] = obj.cart2pix(obj, X, Y, Z, [optAx, rotAroundOptAx, roundIt])
 
-            if nargin<6 || isempty(roundIt), roundIt = true; end
-            if nargin<5 || isempty(rotation), rotation = [0 0]; end
-            if isscalar(rotation), rotation = [rotation 0]; end
-            
-            [X, Y, Z] = elf_support_rot3D(X, Y, Z, rotation(2), 'y');
-            theta_deg = acosd(X);                  % theta is the angle between a viewing direction and the X-axis (X is equal to the scalar dot product of that direction and the X-axis)
-            gamma     = atan2d(-Z, Y)-rotation(1); % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis; the -Z makes sure that high elevation values are mapped onto a low image index
+            arguments
+                obj (1,1) Projector
+                X double
+                Y double
+                Z double
+                optAx = ViewDir.H
+                rotAroundOptAx (1,1) double = 0
+                roundIt (1,1) logical = true
+            end
+
+            if isempty(optAx), optAx = ViewDir.H; end
+            if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
+
+            %
+            [X, Y, Z] = elf_support_rot3D(X, Y, Z, -optAx(1), 'z');
+            [X, Y, Z] = elf_support_rot3D(X, Y, Z, optAx(2), 'y');
+            theta_deg = acosd(X);                       % theta is the angle between a viewing direction and the X-axis (X is equal to the scalar dot product of that direction and the X-axis)
+            gamma     = atan2d(Z, -Y) + rotAroundOptAx; % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis; 
             R_mm      = obj.theta2r(theta_deg);
             R_pix     = R_mm * obj.PixPerMM;
-            w         = R_pix .* cosd(gamma) + obj.MidPoint(2); % along w; this is 0 + mid for azimuth 0
-            h         = R_pix .* sind(gamma) + obj.MidPoint(1); % along h; this is 0 + mid for elevation 0, and -1 + mid for elevation 90
+            w         = R_pix .*  cosd(gamma) + obj.MidPoint(2); % along w; this is 0 + mid for azimuth 0
+            h         = R_pix .* -sind(gamma) + obj.MidPoint(1); % along h; this is 0 + mid for elevation 0, and -1 + mid for elevation 90; 
+                                                                 % the -sin makes sure that high elevation values are mapped onto a low image index
             if roundIt
                 w = round(w);
                 h = round(h);
             end
         end
 
-        function [azi, ele] = pix2rect(obj, w, h, rotation)
+        function [azi, ele] = pix2rect(obj, w, h, optAx, rotAroundOptAx)
             % PIX2RECT translates w/h pixel positions in the fisheye image into azimuth/elevation
             %
-            % Usage example:
-            % [w_grid, h_grid]  = meshgrid(1:I_info.Width, 1:I_info.Height);
-            % [azi, ele]        = obj.pix2rect(w_grid, h_grid)
+            % [azi, ele] = pix2rect(obj, [w, h, optAx, rotAroundOptAx])
 
-            if nargin<4 || isempty(rotation), rotation=0; end
-            [X, Y, Z]           = obj.pix2cart(w, h, rotation);
+            arguments
+                obj (1,1) Projector
+                w double = []
+                h double = []
+                optAx = ViewDir.H
+                rotAroundOptAx (1,1) double = 0
+            end
+
+            if isempty(optAx), optAx = ViewDir.H; end
+            if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
+            
+            [X, Y, Z]           = obj.pix2cart(w, h, optAx, rotAroundOptAx);
             [azi_rad, ele_rad]  = cart2sph(X, Y, Z);
             azi                 = rad2deg(azi_rad);
             ele                 = rad2deg(ele_rad);
         end
 
-        function [w, h] = rect2pix(obj, azi, ele, rotation)
+        function [w, h] = rect2pix(obj, azi, ele, optAx, rotAroundOptAx, roundIt)
             % RECT2PIX translates azimuth/elevation into w/h fisheye pixel positions
             %
             % Usage example:
             % [azi_grid, ele_grid] = meshgrid(-90:0.1:90, 90:-0.1:-90);
-            % [w, h] = obj.rect2pix(azi_grid, ele_grid)
+            % [w, h] = rect2pix(obj, azi_grid, ele_grid, ViewDir.U, 90, true)
 
-            if nargin<4 || isempty(rotation), rotation=[0 0]; end
-            if isscalar(rotation), rotation = [rotation 0]; end
+            arguments
+                obj (1,1) Projector
+                azi double
+                ele double
+                optAx = ViewDir.H
+                rotAroundOptAx (1,1) double = 0
+                roundIt (1,1) logical = true
+            end
 
-            [X, Y, Z]    = sph2cart(deg2rad(azi), deg2rad(ele), 1);
-            [w, h]       = obj.cart2pix(X, Y, Z, rotation);
+            [X, Y, Z] = sph2cart(deg2rad(azi), deg2rad(ele), 1);
+            [w, h]    = obj.cart2pix(X, Y, Z, optAx, rotAroundOptAx, roundIt);
         end
 
-        function [w2, h2] = pix2pix(obj, targetProjector, w, h, rotation)
+        function [w2, h2] = pix2pix(obj, targetProjector, w, h, rotAroundOptAx, roundIt)
             % PIX2PIX translates w/h pixel positions from one fisheye projection to another
-
-            if nargin<5 || isempty(rotation), rotation=0; end
-            [X, Y, Z]    = obj.pix2cart(w, h, [], rotation);
-            [w2, h2]     = targetProjector.cart2pix(X, Y, Z);
+            
+            arguments
+                obj (1,1) Projector
+                targetProjector (1,1) Projector
+                w double = []
+                h double = []
+                rotAroundOptAx (1,1) double = 0
+                roundIt (1,1) logical = true
+            end
+            
+            [X, Y, Z]    = obj.pix2cart(w, h, [0,0], 0);
+            [w2, h2]     = targetProjector.cart2pix(X, Y, Z, [0,0], rotAroundOptAx, roundIt);
         end
     end
 
@@ -388,18 +437,18 @@ classdef Projector
             Logger.log(LogLevel.INFO, '\bdone.\n');
         end
 
-        function [projection_ind, newProjector] = fisheye2fisheyeProjection(obj, projectionType_new, imSize_new, rotation)
+        function [projection_ind, newProjector] = fisheye2fisheyeProjection(obj, projectionType_new, imSize_new, rotAroundOptAx)
             % FISHEYE2FISHEYEPROJECTION calculates a projection index to warp an image into a different fisheye projection
             % It is also possible to retain the same projection but resize the image.
             % This function uses a simple nearest-neighbour strategy; there is no interpolation.
             % Also creates a Projector object for the new image projection.
 
-            if nargin<4 || isempty(rotation), rotation=0; end
+            if nargin<4 || isempty(rotAroundOptAx), rotAroundOptAx=0; end
 
             newProjector = Projector(imSize_new, projectionType_new);
 
             [w_grid, h_grid]   = meshgrid(1:imSize_new(2), 1:imSize_new(1));          % grid of desired output image coordinates
-            [w2_grid, h2_grid] = newProjector.pix2pix(obj, w_grid, h_grid, rotation);
+            [w2_grid, h2_grid] = newProjector.pix2pix(obj, w_grid, h_grid, rotAroundOptAx);
             sel                = w2_grid>obj.Size(2) | w2_grid<1 | h2_grid>obj.Size(1) | h2_grid<1;
             w2_grid(sel)       = NaN; 
             h2_grid(sel)       = NaN;

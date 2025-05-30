@@ -57,7 +57,7 @@ switch para.ana.targetProjection
         % Calculate a projection vector to crop/resize a fisheye input image 
         % and/or change its fisheye projection
         if para.ana.targetImageSize(1)==0 && para.ana.targetImageSize(2)==0
-            [projection_ind, newProj] = proj.crop2ImageCircle(90);
+            [projection_ind, newProj] = proj.crop2ImageCircle(90); % TODO: This should also do the rotation
         else
             [projection_ind, newProj] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(1));
         end
@@ -94,8 +94,8 @@ for iScene = 1:size(scenes, 1)
             para.ana.imageRotation(iScene)~=para.ana.imageRotation(max([1, iScene-1]))
         % recalculate image index to take into account new rotation
         [projection_ind, ~] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(iScene));
-
     end
+
     for i = 1:nIms % for each image in this set
         % Load image
         imNo                    = setStart + i - 1;     % the number of this image
