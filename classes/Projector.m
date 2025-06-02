@@ -12,8 +12,8 @@ classdef Projector
     properties (SetAccess=immutable)
         Size(1,3) double             % [height, width, number of channels] of the original fisheye image
         ProjectionType(1,1) string   % type of fisheye projection in the original image, e.g. "equisolid"
-        ErAzi(1,3) double            % azimuth vector (as [start step end]) for the equirectangular projection; e.g. -90:0.1:90
-        ErEle(1,3) double            % elevation vector (as [start step end]) for the equirectangular projection; e.g. 90:-0.1:-90
+        ErAzi(1,3) double            % azimuth vector (as [start step end]) for the equirectangular projection; e.g. [-90, 0.1, 90]
+        ErEle(1,3) double            % elevation vector (as [start step end]) for the equirectangular projection; e.g. [90, -0.1, -90]
         MidPoint(1,2) double         % image centre in h/w
         PixPerMM(1,1) double         % pixel density (assumed to be equal in both dimensions) of the chip
         CorrFocalLength(1,1) double  % the "effective" focal length (real focal length * a correction factor to match the observed image circle)
@@ -203,7 +203,7 @@ classdef Projector
         function [X, Y, Z] = pix2cart(obj, w, h, optAx, rotAroundOptAx)
             % PIX2CART translates w/h pixel positions into X,Y,Z on a unit sphere
             %
-            % [X, Y, Z] = pix2cart(obj, [w, h, optAx, rotAroundOptAx])
+            % [X, Y, Z] = obj.pix2cart(obj, [w, h, optAx, rotAroundOptAx])
             
             arguments
                 obj (1,1) Projector
@@ -217,7 +217,7 @@ classdef Projector
             if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
             if isempty(w) || isempty(h)
                 [w, h] = meshgrid(1:obj.Size(2), 1:obj.Size(1));
-            end                
+            end
 
             %
             h_rel = h-obj.MidPoint(1);
@@ -281,7 +281,7 @@ classdef Projector
         function [azi, ele] = pix2rect(obj, w, h, optAx, rotAroundOptAx)
             % PIX2RECT translates w/h pixel positions in the fisheye image into azimuth/elevation
             %
-            % [azi, ele] = pix2rect(obj, [w, h, optAx, rotAroundOptAx])
+            % [azi, ele] = obj.pix2rect(obj, [w, h, optAx, rotAroundOptAx])
 
             arguments
                 obj (1,1) Projector
@@ -303,17 +303,19 @@ classdef Projector
         function [w, h] = rect2pix(obj, azi, ele, optAx, rotAroundOptAx, roundIt)
             % RECT2PIX translates azimuth/elevation into w/h fisheye pixel positions
             %
-            % Usage example:
-            % [azi_grid, ele_grid] = meshgrid(-90:0.1:90, 90:-0.1:-90);
-            % [w, h] = rect2pix(obj, azi_grid, ele_grid, ViewDir.U, 90, true)
+            % [w, h] = rect2pix(obj, [azi, ele, optAx, rotAroundOptAx, roundIt])
 
             arguments
                 obj (1,1) Projector
-                azi double
-                ele double
+                azi double = []
+                ele double = []
                 optAx = ViewDir.H
                 rotAroundOptAx (1,1) double = 0
                 roundIt (1,1) logical = true
+            end
+
+            if isempty(azi) || isempty(ele)
+                [azi, ele] = meshgrid(obj.ErAzi(1):obj.ErAzi(2):obj.ErAzi(3), obj.ErEle(1):obj.ErEle(2):obj.ErEle(3));
             end
 
             [X, Y, Z] = sph2cart(deg2rad(azi), deg2rad(ele), 1);
@@ -455,7 +457,7 @@ classdef Projector
             projection_ind     = obj.sub2ind(obj.Size, w2_grid, h2_grid);
         end
 
-        function projection_ind = array2image(obj, prArray)
+        function projection_ind = array2image(obj, prArray, optAx)
             % ARRAY2IMAGE calculates a projection index to project activations of a photoreceptor
             % photoreceptor array onto a fisheye image.
             %
@@ -469,7 +471,7 @@ classdef Projector
             % im_proj = Projector.apply(projection_ind, im, proj.Size)
 
             % Check if this already exists in the buffer
-            projection_ind = Buffer.retrieve("Array2ImageProjection", {obj, prArray});
+            projection_ind = Buffer.retrieve("Array2ImageProjection", {obj, prArray, optAx});
             if ~isempty(projection_ind)
                     Logger.log(LogLevel.INFO, '\tProjection found in buffer...loaded.\n');
                 return
@@ -478,7 +480,7 @@ classdef Projector
             % Calculate projection
                 Logger.log(LogLevel.INFO, '\tCalculating projection of photoreceptor array onto fisheye image...\n');
             [w_grid, h_grid] = meshgrid(1:obj.Size(2), 1:obj.Size(1)); % grid of desired output image coordinates
-            [x, y, z] = obj.pix2cart(w_grid(:), h_grid(:));
+            [x, y, z] = obj.pix2cart(w_grid(:), h_grid(:), optAx);
             xyz = [x(:) y(:) z(:)]';
 
             prArray3xN = prArray';  % make into 3xN
@@ -504,7 +506,7 @@ classdef Projector
             Logger.log(LogLevel.INFO, '\bdone.\n');
 
             % Store everything in the buffer
-            Buffer.store("Array2ImageProjection", {obj, prArray}, projection_ind);
+            Buffer.store("Array2ImageProjection", {obj, prArray, optAx}, projection_ind);
                 Logger.log(LogLevel.INFO, '\tProjection stored in buffer.\n');
         end
 
