@@ -21,19 +21,20 @@ info            = elf_info_collect(para.fh.Paths.datapath, imgFormat);   % this 
 infoSum         = elf_info_summarise(info, false);                    % summarise EXIF information for this dataset. This will be saved for later use below
 infoSum.linims  = strcmp(imgFormat, "*.dng");                         % if linear images are used, correct for that during plotting
 scenes          = elf_hdr_brackets(info);                             % determine which images are part of the same scene
-                    Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', size(scenes, 1), dataSet);
+nScenes         = size(scenes, 1);
+                    Logger.log(LogLevel.INFO, '      Processing %d scenes in environment %s.\n', nScenes, dataSet);
 
 %% Expand some parameters to one per image
 if isscalar(para.ana.imageRotation)
-    para.ana.imageRotation = repmat(para.ana.imageRotation, [size(scenes, 1), 1]);
+    para.ana.imageRotation = repmat(para.ana.imageRotation, [nScenes, 1]);
 end
-if length(para.ana.imageRotation) ~= size(scenes, 1)
+if length(para.ana.imageRotation) ~= nScenes
     error("Number of image rotation elements must be 1 or equal to the number of scenes in the dataset")
 end
 if isscalar(para.ana.imageDirection)
-    para.ana.imageDirection = repmat(para.ana.imageDirection, [size(scenes, 1), 1]);
+    para.ana.imageDirection = repmat(para.ana.imageDirection, [nScenes, 1]);
 end
-if length(para.ana.imageDirection) ~= size(scenes, 1)
+if length(para.ana.imageDirection) ~= nScenes
     error("Number of image direction elements must be 1 or equal to the number of scenes in the dataset")
 end
 
@@ -75,102 +76,115 @@ para.fh.saveInfoSum(para, infoSum); % saves infosum AND para for use in later st
 
 
 tic; % Start taking time
+wbh = waitbar(0, "Starting scene-by-scene calibration, HDR creation and analysis...");
 
 % Process one scene at a time
-for iScene = 1:size(scenes, 1)
-    clear res
-    
-    setStart    = scenes(iScene, 1);        % first image in this scene
-    setEnd      = scenes(iScene, 2);        % last image in this scene
-    nIms        = setEnd - setStart + 1;  % total number of images in this scene
-
-    im_proj     = zeros(projSize(1), projSize(2), projSize(3), nIms);  % pre-allocate
-    conf_proj   = im_proj;  % pre-allocate
-%     im_proj_cal = zeros(lEle, lAzi, infoSum.SamplesPerPixel, numims);  % pre-allocate
-    rawWhiteLevels = zeros(3, nIms);        % pre-allocate; raw white levels (after black subtraction)
-    
-    if (para.ana.targetImageSize(1)~=0 || para.ana.targetImageSize(2)~=0) && ...
-            ismember(para.ana.targetProjection, ["equisolid", "equidistant", "stereographic", "orthographic"]) && ...
-            para.ana.imageRotation(iScene)~=para.ana.imageRotation(max([1, iScene-1]))
-        % recalculate image index to take into account new rotation
-        [projection_ind, ~] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(iScene));
-    end
-
-    for i = 1:nIms % for each image in this set
-        % Load image
-        imNo                    = setStart + i - 1;     % the number of this image
-        fName                   = info(imNo).Filename;  % full path to input image file
-        im_raw                  = double(elf_io_imread(fName)); % load the image (uint16) and transform to double
-
-        % Calibrate and calculate intensity confidence
-        [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
+try
+    for iScene = 1:nScenes
+        clear res
         
-        % Reproject/Resize/Crop image
-        im_proj(:, :, :, i)   = Projector.apply(im_cal, projection_ind, projSize);
-        conf_proj(:, :, :, i) = Projector.apply(conf, projection_ind, projSize);
-        %         im_proj_cal(:, :, :, i) = cal.applySpectral(im_proj(:, :, :, i), info(imnr), para.ana.colourCalibType); % only needed for 'histcomb'-type intensity calculation, but not time-intensive
-
-    end
+        setStart    = scenes(iScene, 1);        % first image in this scene
+        setEnd      = scenes(iScene, 2);        % last image in this scene
+        nIms        = setEnd - setStart + 1;  % total number of images in this scene
     
-    % Sort images by EV = exp * iso / apt^2
-    EV               = arrayfun(@(x) x.DigitalCamera.ExposureTime * x.DigitalCamera.ISOSpeedRatings / x.DigitalCamera.FNumber^2, info(setStart:setEnd));
-    [~, imOrder]     = sort(EV);         % sorted EV (ascending), for HDR calculation
-    im_proj          = im_proj(:, :, :, imOrder);
-%     im_proj_cal      = im_proj_cal(:, :, :, imOrder);
-    conf_proj        = conf_proj(:, :, :, imOrder);
-    rawWhiteLevels   = rawWhiteLevels(:, imOrder);
-    
-    % scale images to match middle exposure (creates a warning if scaling by more than 30%)
-    [im_proj, res.scalefac] = elf_hdr_scaleStack(im_proj, conf_proj, rawWhiteLevels);
-    
-    % Pass a figure number and an outputfilename here only if you want diagnostic pdfs.
-    % However, MATLAB can't currently deal with saving these large figures, so no pdf will be created either way.
-    [im_HDR, im_diag] = elf_hdr_calcHDR(im_proj, conf_proj, para.ana.hdrMethod, rawWhiteLevels); % para.ana.hdrMethod can be 'overwrite', 'overwrite2', 'validranges', 'allvalid', 'allvalid2' (default), 'noise', para.ana.hdrMethod    
-    im_HDR_cal        = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
-    
-    %% Black out horizon if needed
-    if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "validImageRadius") && para.ana.validImageRadius>0
-        im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.validImageRadius);
-        im_diag = newProj.blackout(im_diag, para.ana.validImageRadius, 0);
-    end    
-
-    % Save HDR file as MAT and TIF.
-    % TIF is not strictly necessary, but a good diagnostic. 
-    % Cost of saving it: ~300GB/6TB disk space, 2s per scene for calculation/saving = 6.7h extra for the current ~12000 scenes.
-    % Cost of instead recalculating it in main2: 1.5s per scene for loading/converting = 5h extra ".
-    para.fh.saveScene_mat(sprintf('scene%03d', iScene), im_HDR_cal);
-    I = elf_io_correctdng(im_HDR_cal, info(setStart), 'bright');
-
-    if para.ana.saveSceneTifs
-        para.fh.saveScene_tif(sprintf('scene%03d', iScene), I);
-    end
-
-    if para.ana.saveDiagnosticTifs
-        para.fh.saveSceneDiag_tif(sprintf('scene%03d', iScene), im_diag);
-    end
-
-    %% Perform per-scene analysis and plotting for all modules
-    res.info = info(setStart);
-    for i = 1:length(para.modules)
-        modPerSceneFilename = [para.modules{i} '_perScene'];
-        if ~isempty(which(modPerSceneFilename))
-            res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, infoSum, iScene, size(scenes, 1));
+        im_proj     = zeros(projSize(1), projSize(2), projSize(3), nIms);  % pre-allocate
+        conf_proj   = im_proj;  % pre-allocate
+    %     im_proj_cal = zeros(lEle, lAzi, infoSum.SamplesPerPixel, numims);  % pre-allocate
+        rawWhiteLevels = zeros(3, nIms);        % pre-allocate; raw white levels (after black subtraction)
+        
+        if (para.ana.targetImageSize(1)~=0 || para.ana.targetImageSize(2)~=0) && ...
+                ismember(para.ana.targetProjection, ["equisolid", "equidistant", "stereographic", "orthographic"]) && ...
+                para.ana.imageRotation(iScene)~=para.ana.imageRotation(max([1, iScene-1]))
+            % recalculate image index to take into account new rotation
+            [projection_ind, ~] = proj.fisheye2fisheyeProjection(para.ana.targetProjection, para.ana.targetImageSize, para.ana.imageRotation(iScene));
         end
+    
+        for i = 1:nIms % for each image in this set
+            % Load image
+            imNo                    = setStart + i - 1;     % the number of this image
+            fName                   = info(imNo).Filename;  % full path to input image file
+            im_raw                  = double(elf_io_imread(fName)); % load the image (uint16) and transform to double
+    
+            % Calibrate and calculate intensity confidence
+            [im_cal, conf, rawWhiteLevels(:, i)] = cal.applyAbsolute(im_raw, info(imNo));
+            
+            % Reproject/Resize/Crop image
+            im_proj(:, :, :, i)   = Projector.apply(im_cal, projection_ind, projSize);
+            conf_proj(:, :, :, i) = Projector.apply(conf, projection_ind, projSize);
+            %         im_proj_cal(:, :, :, i) = cal.applySpectral(im_proj(:, :, :, i), info(imnr), para.ana.colourCalibType); % only needed for 'histcomb'-type intensity calculation, but not time-intensive
+    
+        end
+        
+        % Sort images by EV = exp * iso / apt^2
+        EV               = arrayfun(@(x) x.DigitalCamera.ExposureTime * x.DigitalCamera.ISOSpeedRatings / x.DigitalCamera.FNumber^2, info(setStart:setEnd));
+        [~, imOrder]     = sort(EV);         % sorted EV (ascending), for HDR calculation
+        im_proj          = im_proj(:, :, :, imOrder);
+    %     im_proj_cal      = im_proj_cal(:, :, :, imOrder);
+        conf_proj        = conf_proj(:, :, :, imOrder);
+        rawWhiteLevels   = rawWhiteLevels(:, imOrder);
+        
+        % scale images to match middle exposure (creates a warning if scaling by more than 30%)
+        [im_proj, res.scalefac] = elf_hdr_scaleStack(im_proj, conf_proj, rawWhiteLevels);
+        
+        % Pass a figure number and an outputfilename here only if you want diagnostic pdfs.
+        % However, MATLAB can't currently deal with saving these large figures, so no pdf will be created either way.
+        [im_HDR, im_diag] = elf_hdr_calcHDR(im_proj, conf_proj, para.ana.hdrMethod, rawWhiteLevels); % para.ana.hdrMethod can be 'overwrite', 'overwrite2', 'validranges', 'allvalid', 'allvalid2' (default), 'noise', para.ana.hdrMethod    
+        im_HDR_cal        = cal.applySpectral(im_HDR, info(setStart)); % apply spectral calibration
+        
+        %% Black out horizon if needed
+        if para.ana.targetProjection~="equirectangular" && isfield(para.ana, "validImageRadius") && para.ana.validImageRadius>0
+            im_HDR_cal = newProj.blackout(im_HDR_cal, para.ana.validImageRadius);
+            im_diag = newProj.blackout(im_diag, para.ana.validImageRadius, 0);
+        end    
+    
+        % Save HDR file as MAT and TIF.
+        % TIF is not strictly necessary, but a good diagnostic. 
+        % Cost of saving it: ~300GB/6TB disk space, 2s per scene for calculation/saving = 6.7h extra for the current ~12000 scenes.
+        % Cost of instead recalculating it in main2: 1.5s per scene for loading/converting = 5h extra ".
+        para.fh.saveScene_mat(sprintf('scene%03d', iScene), im_HDR_cal);
+        I = elf_io_correctdng(im_HDR_cal, info(setStart), 'bright');
+    
+        if para.ana.saveSceneTifs
+            para.fh.saveScene_tif(sprintf('scene%03d', iScene), I);
+        end
+    
+        if para.ana.saveDiagnosticTifs
+            para.fh.saveSceneDiag_tif(sprintf('scene%03d', iScene), im_diag);
+        end
+    
+        %% Perform per-scene analysis and plotting for all modules
+        res.info = info(setStart);
+        for i = 1:length(para.modules)
+            modPerSceneFilename = [para.modules{i} '_perScene'];
+            if ~isempty(which(modPerSceneFilename))
+                res = feval(modPerSceneFilename, para, res, im_HDR_cal, I, infoSum, iScene, nScenes);
+            end
+        end
+    
+        %% save results output files
+        sceneName = sprintf('scene%03d', iScene);
+        para.fh.saveCoreResults(sceneName, res);
+
+                        if iScene == 1
+                            projTime = toc/60*nScenes;
+                            s = sprintf('Starting scene-by-scene calibration, HDR creation and analysis.\nProjected time: %.1f minutes.', projTime);
+                            waitbar(0, wbh, s); drawnow
+                            Logger.log(LogLevel.INFO, "\t%s\n", s);
+                            Logger.log(LogLevel.INFO, '\tScene: 1..');
+                        elseif mod(iScene-1, 20)==0
+                            Logger.log(LogLevel.INFO, '\n\t%d..', iScene);
+                        else
+                            Logger.log(LogLevel.INFO, '\b%d..', iScene);
+                        end
+
+        waitbar(iScene/nScenes, wbh);
     end
-
-    %% save results output files
-    sceneName = sprintf('scene%03d', iScene);
-    para.fh.saveCoreResults(sceneName, res);
-
-                    if iScene == 1
-                        Logger.log(LogLevel.INFO, '\tStarting scene-by-scene calibration, HDR creation and analysis. Projected time: %.2f minutes.\n', toc/60*size(scenes, 1));
-                        Logger.log(LogLevel.INFO, '\tScene: 1..');
-                    elseif mod(iScene-1, 20)==0
-                        Logger.log(LogLevel.INFO, '\n\t%d..', iScene);
-                    else
-                        Logger.log(LogLevel.INFO, '\b%d..', iScene);
-                    end
+catch me
+    try close(wbh); end
+    rethrow(me);
 end
+
+try close(wbh); end
 
                     Logger.log(LogLevel.INFO, '\b\t\tdone.\n');
                     saveFolder = fullfile(para.fh.Paths.root, dataSet, para.fh.Paths.scenefolder);
