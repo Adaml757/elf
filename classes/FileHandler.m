@@ -150,6 +150,26 @@ classdef FileHandler < handle
         end
 
         %% Polar
+        function savePolar_mat(obj, sceneName, pol_vectors)
+            obj.saveToMat(pol_vectors, obj.Paths.polarfolder, sceneName)
+
+            % read example:
+            % i = pol_vectors{1};
+            % vop = squeeze(i(:, :, 3, :));
+            % dolp = sqrt(sum(vop.^2, 3));
+            % figure; imagesc(dolp); axis equal; colormap jet; clim([0 1])
+        end
+
+        function savePolarArray_mat(obj, sceneName, pol_vectors)
+            obj.saveToMat(pol_vectors, obj.Paths.polarfolder, sceneName, "_array")
+
+            % read example:
+            % i = pol_vectors{1};
+            % vop = squeeze(i(:, 3, :));
+            % dolp = sqrt(sum(vop.^2, 2));
+            % figure; imagesc(dolp); axis equal; colormap jet; clim([0 1])
+        end
+
         function savePolar_jpg(obj, sceneName, ims, fwhms, ch)
             [~, f] = fileparts(sceneName); 
             %%TODO: Some of this should be done outside, maybe save from plotting function
