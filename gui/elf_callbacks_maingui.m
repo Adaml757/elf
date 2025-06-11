@@ -91,7 +91,7 @@ else
                 if ~isempty(modName{1})
                     modName = modName{1}{1};
                     thisPara = elf_para(modules, '', dataset);
-                    thisPara = elf_para_update(thisPara);   % Combine old parameter file with potentially changed information in current config
+                    thisPara = elf_para_update(thisPara, modName);   % Combine old parameter file with potentially changed information in current config
                     infoSum  = thisPara.fh.loadInfoSum();       % loads the old infosum file (which contains projection information, and linims)
                     
                     modPerEnvFilename = [modName '_perEnvironment'];
