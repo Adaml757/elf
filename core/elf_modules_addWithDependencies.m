@@ -1,4 +1,4 @@
-function [mods, anap, plotp] = elf_modules_addWithDependencies(mods)
+function [mods, anap, plotp] = elf_modules_addWithDependencies(mods, localPath)
     % ELF_MODULES_ADDWITHDEPENDENCIES loads the desired modules (if installed) and their dependencies
     %   If a field is present in more than one .env file, the modules that are listed first in "mods" are prioritised.
     %   The "core" module is always added as a last dependency.
@@ -15,12 +15,12 @@ function [mods, anap, plotp] = elf_modules_addWithDependencies(mods)
     i = 1;
     d = {};
     while i<=length(mods)
-        [mods, d{i}] = loadEnvAndAddDependencies(mods, i);
+        [mods, d{i}] = loadEnvAndAddDependencies(mods, i, localPath);
         i = i + 1;
     end
     if ~ismember('core', mods)
         mods = [mods, {'core'}];
-        [mods, d{end+1}] = loadEnvAndAddDependencies(mods, length(mods));    
+        [mods, d{end+1}] = loadEnvAndAddDependencies(mods, length(mods), localPath);    
     end
 
     % Step 2: Combine .env files, with earlier modules having higher priority
@@ -41,7 +41,7 @@ function [mods, anap, plotp] = elf_modules_addWithDependencies(mods)
     end
 end
 
-function [mods, d] = loadEnvAndAddDependencies(mods, i)
+function [mods, d] = loadEnvAndAddDependencies(mods, i, localPath)
     % Loads the .env file for the "i"'th module in cell array "mods", and adds the dependencies to the end of "mods"
     %
     % Inputs:
@@ -52,7 +52,7 @@ function [mods, d] = loadEnvAndAddDependencies(mods, i)
     %   mods - cell array of module names with new dependencies added
     %   d    - DotEnv object for the information loaded from the .env file
 
-    d = loadDotEnv(mods{i});
+    d = loadDotEnv(mods{i}, localPath);
     deps = d.get('DEPENDENCIES', 'charvector');
     for j = 1:length(deps)
         if ~ismember(deps{j}, mods) % only load NEW dependencies
@@ -61,7 +61,7 @@ function [mods, d] = loadEnvAndAddDependencies(mods, i)
     end
 end
 
-function d = loadDotEnv(modName)
+function d = loadDotEnv(modName, localPath)
     % Loads the .env file for a module from its default location
     % File location example for the module TEST
     %   TEST.env should be in elf/config/
@@ -84,7 +84,7 @@ function d = loadDotEnv(modName)
     end
     defFilename = [modName '_defaults'];
     try
-        d = DotEnv.fromFiles(envPath, envFilename, defPath, defFilename);
+        d = DotEnv.fromFiles(envPath, envFilename, defPath, defFilename, localPath, 'local');
     catch me
         error("Module ""%s"" or its .env file could not be found or is corrupted (Original error message: %s)", modName, me.message);
     end

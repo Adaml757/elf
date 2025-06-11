@@ -44,20 +44,23 @@ else
 end
 
 %% define further folder structure
-paths.matfolder        = "mat";            % subfolder of data folder into which to save the .mat descriptor files (and individual .pdf files, if activated) 
-paths.filtfolder       = "filt";           % subfolder of data folder into which to save the filtered images
-paths.polarfolder      = "polar";           % subfolder of data folder into which to save the filtered images
-paths.scenefolder      = "scenes";         % subfolder of data folder into which to save the scene images
-paths.diagfolder       = "diag";         % subfolder of data folder into which to save the diagnostic images
-paths.calibfolder      = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');
-para.fh            = FileHandler(paths);
+paths.matfolder   = "mat";            % subfolder of data folder into which to save the .mat descriptor files (and individual .pdf files, if activated) 
+paths.filtfolder  = "filt";           % subfolder of data folder into which to save the filtered images
+paths.polarfolder = "polar";           % subfolder of data folder into which to save the filtered images
+paths.scenefolder = "scenes";         % subfolder of data folder into which to save the scene images
+paths.diagfolder  = "diag";         % subfolder of data folder into which to save the diagnostic images
+paths.calibfolder = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');
+para.fh           = FileHandler(paths);
 
 %% if this is called for a specific dataset, store that information
 if ~isempty(dataset)
-    para.fh.Paths.dataset      = dataset;
-    para.fh.Paths.imgformat    = imgformat;
-    para.fh.Paths.datapath     = fullfile(para.fh.Paths.root, para.fh.Paths.dataset);
+    para.fh.Paths.dataset   = dataset;
+    para.fh.Paths.imgformat = imgformat;
+    para.fh.Paths.datapath  = fullfile(para.fh.Paths.root, para.fh.Paths.dataset);
     para.fh.init();
+    localpath = para.fh.Paths.datapath;
+else
+    localpath = [];
 end
 
 %% load .env files
@@ -66,7 +69,7 @@ if strcmp(rootdir, 'noenv')
 end
 
 %% Check whether all modules and dependencies are installed, and load their .env files
-[para.modules, para.ana, para.plot] = elf_modules_addWithDependencies(desiredModules);
+[para.modules, para.ana, para.plot] = elf_modules_addWithDependencies(desiredModules, localpath);
 
 %% projection constants
 para.azi  = [para.ana.targetAziRange(1), .1/para.ana.resolutionBooster, para.ana.targetAziRange(2)];          % regular elevation sampling for equirectangular projection

@@ -29,7 +29,7 @@ classdef DotEnv
     end
 
     methods(Static)
-        function obj = fromFiles(envFolder, envFilename, defFolder, defFilename)
+        function obj = fromFiles(envFolder, envFilename, defFolder, defFilename, localFolder, localFilename)
             % DotEnv.fromFiles creates a DotEnv object by reading from a .env file (and a default.env file)
             % obj = DotEnv.fromFiles(envFolder, envFilename, defFolder, defFilename)
             %
@@ -38,6 +38,8 @@ classdef DotEnv
             %   envFilename - filename (without extension) to read. '.env'-extension is automatically added (default: '')
             %   defFolder - relative or absolute path to the default environment file folder (default: 'defaults')
             %   defFilename - default filename (without extension) to read. '.env'-extension is automatically added (default: '_defaults')
+            %   localFolder - relative or absolute path to the environment folder
+            %   localFilename - local filename (without extension) to read. '.env'-extension is automatically added (default: 'local')
             %
             % Examples: 
             %   e = DotEnv.fromFiles(fullfile(rootFolder, 'config'), '') loads '.env' from /rootfolder/config
@@ -47,6 +49,8 @@ classdef DotEnv
             if nargin<2, envFilename = ''; end
             if nargin<3, defFolder = fullfile(envFolder, 'defaults'); end
             if nargin<4, defFilename = [envFilename '_defaults']; end
+            if nargin<5, localFolder = []; end
+            if nargin<6, localFilename = 'local'; end
 
             envFullFilename = fullfile(envFolder, [envFilename '.env']);
             defFullFilename = fullfile(defFolder, [defFilename '.env']);
@@ -71,6 +75,17 @@ classdef DotEnv
                     fprintf('.env file was not found in expected path. Example was used and copied.\n')
                 end
                 Env = DotEnv.parseFile(envFullFilename);
+            end
+
+            % load local .env file
+            if ~isempty(localFolder)
+                localFullFilename = fullfile(localFolder, [localFilename '.env']);
+                if isfile(localFullFilename)
+                    EnvLocal = DotEnv.parseFile(localFullFilename);
+                    if ~isempty(EnvLocal)
+                        Env = compStruct(EnvLocal, Env);  % Local file takes precedence
+                    end
+                end
             end
 
             % Check whether any fields are missing. If so, just copy them from the example file
@@ -221,8 +236,11 @@ classdef DotEnv
                 kvpair(cellfun(@isempty, kvpair)) = [];
                 kvpair = cellfun(@(x) struct('key', x.key, 'value', x.value), kvpair);
             end
-            
-            env = cell2struct(strtrim({kvpair.value}), [kvpair.key], 2);
+            if ~isempty(kvpair)
+                env = cell2struct(strtrim({kvpair.value}), [kvpair.key], 2);
+            else
+                env = kvpair;
+            end
         end
 
         function c = snake2camel(s)
