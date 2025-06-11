@@ -4,8 +4,8 @@ function gui = elf_maingui(status, para, datasets, exts, cbhandle, figname, figh
 if nargin<7, figh = []; end
 if nargin<6, figname = "ELF"; end
 
-pnum_cols = para.gui.pnum_cols;
-pnum_rows = para.gui.pnum_rows; 
+pnum_cols = para.plot.guiNumCols;
+pnum_rows = para.plot.guiNumRows; 
 
 %% parameters
 numsets         = size(status, 1);         % total number of sets

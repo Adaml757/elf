@@ -48,10 +48,6 @@ img4ch      = cat(3, im, mean(im, 3));  % Construct 4 channels (R,G,B,BW) for in
 allrows     = cell(imh, size(img4ch, 3)); % pre-allocate
 
 %% Create HDR histograms for each row
-% if strcmp(type, 'histcomb')
-%     conf(:, :, 4, :)    = max(conf, [], 3);         % for BW channel, use max %% TODO: Does this make sense?
-%     conffactors(4, :)   = min(conffactors(:, :), [], 1);  % for BW channel, use min %% TODO: Does this make sense?
-% end
 for row = 1:imh                 % for each row
 	for ch = 1:size(img4ch, 3)  % for each channel (R,G,B,BW)
         switch type

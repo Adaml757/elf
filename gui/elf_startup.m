@@ -65,7 +65,7 @@ for i = 1:size(status, 1)
         otherwise
             status(i, 1) = 4;
     end
-    scale   = para.gui.smallsize/size(I, 2);
+    scale   = para.plot.guiPreviewSize/size(I, 2);
     I       = imresize(I, scale);
     warning('off', 'io_correctdng:NoMatrix')
     elf_plot_image(I, info, gui.p(i).ah, '', corr);

@@ -86,14 +86,14 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
 
         %% Calculate mean intensity
         data = para.fh.loadCoreResults(fNames_im); %% TODO: Is this needed???
-        intMean = elf_analysis_datasetmean(data, 1:length(data), 1, para.plot.datasetMeanType); % Calculate descriptor mean for intensities
+        intMean = elf_analysis_datasetmean(data, 1:length(data), para.plot.datasetMeanType); % Calculate descriptor mean for intensities
         para.fh.saveMeanCoreIntResults(intMean); % write data mean
         
         %% Write stats into CSV file
         elf_analysis_writestats(intMean, para.fh.Paths.fname_stats);
                 
         %% Plot results
-        h       = elf_plot_intSummary(intMean, uint16(meanImage), infoSum, para.plot, para.fh.Paths.dataset, length(fNames_im));
+        h = elf_plot_intSummary(intMean, uint16(meanImage), infoSum, para.plot, para.fh.Paths.dataset, length(fNames_im));
         
         %% Save output to pdf and tif
         para.fh.saveMeanElfPlot_jpg(h.fh);

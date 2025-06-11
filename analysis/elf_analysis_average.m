@@ -17,10 +17,6 @@ function res = elf_analysis_average(allrows, over, perc, varinput)
 % elf_analysis_int -> elf_analysis_average -> 
 %                                          -> elf_analysis_prctile_weighted
 
-
-%% TODO: What we want here is a 4x60 array of means in res.means
-%%       NOT a scalar value in means in 4x60 res fields
-
 switch over
     case 'rows'
         error('Currently not implemented for rows (but should be simple)');

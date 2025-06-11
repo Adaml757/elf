@@ -68,20 +68,7 @@ end
 %% Check whether all modules and dependencies are installed, and load their .env files
 [para.modules, para.ana, para.plot] = elf_modules_addWithDependencies(desiredModules);
 
-%% projection constants (don't change)
-para.azi                    = [para.ana.targetAziRange(1), .1/para.ana.resolutionBooster, para.ana.targetAziRange(2)];          % regular elevation sampling for equirectangular projection
-para.ele                    = [para.ana.targetEleRange(1), .1/para.ana.resolutionBooster, para.ana.targetEleRange(2)];          % regular azimuth sampling for equirectangular projection
-para.ele2                   = [para.ana.targetEleRange(2), -.1/para.ana.resolutionBooster, para.ana.targetEleRange(1)];
-
-%% main ELF gui parameters
-%% TODO: Could be moved to core .env file
-para.gui.pnum_cols = 8; % 8 tiles horizontally
-para.gui.pnum_rows = 6; % 6 tiles vertically
-para.gui.smallsize = 200; % size of small preview images in ELF gui
-
-%% spatial analysis constants
-%% TODO: Move to .env when spatial module is overhauled
-para.ana.spatialbins        = [-90 -10 10 90];%[-90 -50 -10 10 50 90]; % define the boundaries of bins for spatial/contrast analysis
-para.ana.spatialmeantype    = 'rms';    % can be 'mean'/'rms'/'perc'; if this is changed, step 3 and 4 have to be recalculated
-para.ana.spatialmeanthr     = 0;        % contrast threshold in percent; only contrasts >= this value will be included in the mean
-
+%% projection constants
+para.azi  = [para.ana.targetAziRange(1), .1/para.ana.resolutionBooster, para.ana.targetAziRange(2)];          % regular elevation sampling for equirectangular projection
+para.ele  = [para.ana.targetEleRange(1), .1/para.ana.resolutionBooster, para.ana.targetEleRange(2)];          % regular azimuth sampling for equirectangular projection
+para.ele2 = [para.ana.targetEleRange(2), -.1/para.ana.resolutionBooster, para.ana.targetEleRange(1)];

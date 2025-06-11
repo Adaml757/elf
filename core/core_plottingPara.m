@@ -1,22 +1,25 @@
 function plotP = core_plottingPara(d)
 
 plotParameters = ...
-    {'RED_CHANNEL_COLOUR',   'doublevector';
+    {'GUI_NUM_COLS', 'double';
+     'GUI_NUM_ROWS', 'double';
+     'GUI_PREVIEW_SIZE', 'double';
+     'RED_CHANNEL_COLOUR', 'doublevector';
      'GREEN_CHANNEL_COLOUR', 'doublevector'; 
-     'BLUE_CHANNEL_COLOUR',  'doublevector';
+     'BLUE_CHANNEL_COLOUR', 'doublevector';
      'WHITE_CHANNEL_COLOUR', 'doublevector';
-     'RED_CHANNEL_LINEWIDTH',   'double';
+     'RED_CHANNEL_LINEWIDTH', 'double';
      'GREEN_CHANNEL_LINEWIDTH', 'double'; 
-     'BLUE_CHANNEL_LINEWIDTH',  'double';
+     'BLUE_CHANNEL_LINEWIDTH', 'double';
      'WHITE_CHANNEL_LINEWIDTH', 'double';
-     'MAIN_RED_ACTIVE',   'logical';
-     'MAIN_GREEN_ACTIVE',   'logical';
-     'MAIN_BLUE_ACTIVE',   'logical';
-     'MAIN_WHITE_ACTIVE',   'logical';
-     'RANGE_RED_ACTIVE',   'logical';
-     'RANGE_GREEN_ACTIVE',   'logical';
-     'RANGE_BLUE_ACTIVE',   'logical';
-     'RANGE_WHITE_ACTIVE',   'logical';
+     'MAIN_RED_ACTIVE', 'logical';
+     'MAIN_GREEN_ACTIVE', 'logical';
+     'MAIN_BLUE_ACTIVE', 'logical';
+     'MAIN_WHITE_ACTIVE', 'logical';
+     'RANGE_RED_ACTIVE', 'logical';
+     'RANGE_GREEN_ACTIVE', 'logical';
+     'RANGE_BLUE_ACTIVE', 'logical';
+     'RANGE_WHITE_ACTIVE', 'logical';
      'PERC50_SHADING', 'doublevector';
      'PERC95_SHADING', 'doublevector';
      'AXES_FONTSIZE', 'double';
