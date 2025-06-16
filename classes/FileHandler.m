@@ -141,7 +141,7 @@ classdef FileHandler < handle
                 ims{i} = obj.loadFromIm(8, obj.Paths.diagfolder, sceneName, sprintf("_%.1f", fwhms(i)));
             end
         end
-
+        
         function saveFilterArray_mat(obj, sceneName, im)
             obj.saveToMat(im, obj.Paths.filtfolder, sceneName, "_array")
         end
@@ -160,6 +160,14 @@ classdef FileHandler < handle
             for i = 1:length(ims)
                 obj.saveToIm(ims{i}, 16, obj.Paths.filtfolder, sceneName, sprintf("_array_%.1f", fwhms(i)))
             end
+        end
+
+        function saveFilterDiagArray_mat(obj, sceneName, ims)
+            obj.saveToMat(ims, obj.Paths.diagfolder, sceneName, "_array");
+        end
+
+        function ims = loadFilterDiagArray_mat(obj, sceneName)
+            ims = obj.loadFromMat(obj.Paths.diagfolder, sceneName, "_array");
         end
 
         %% Polar
@@ -242,6 +250,14 @@ classdef FileHandler < handle
             for i = 1:length(ims)
                 obj.saveToIm(ims{i}, 8, obj.Paths.diagfolder, setName, sprintf("_%.1f", fwhms(i)))
             end
+        end
+
+        function savePolarDiagArray_mat(obj, setName, ims)
+            obj.saveToMat(ims, obj.Paths.diagfolder, setName, "_array");
+        end
+
+        function ims = loadPolarDiagArray_mat(obj, setName)
+            ims = obj.loadFromMat(obj.Paths.diagfolder, setName, "_array");
         end
 
         %% Mean image
