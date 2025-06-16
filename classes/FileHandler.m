@@ -102,7 +102,7 @@ classdef FileHandler < handle
         end
 
         function data = loadScene_tif(obj, sceneName)
-            data = obj.loadFromIm(obj.Paths.scenefolder, sceneName);
+            data = obj.loadFromIm(16, obj.Paths.scenefolder, sceneName);
         end
 
         %% Diagnostic images (R: saturation, G: low signal, B: movement between exposures)
@@ -111,7 +111,7 @@ classdef FileHandler < handle
         end
 
         function data = loadSceneDiag_tif(obj, sceneName)
-            data = obj.loadFromIm(obj.Paths.diagfolder, sceneName);
+            data = obj.loadFromIm(8, obj.Paths.diagfolder, sceneName);
         end
 
         %% Filtered images
@@ -123,12 +123,25 @@ classdef FileHandler < handle
             data = obj.loadFromMat(obj.Paths.filtfolder, sceneName);
         end
 
-        function saveFilter_tif(obj, sceneName, ims, fwhms)            
+        function saveFilter_tif(obj, sceneName, ims, fwhms)
             for i = 1:length(ims)
                 obj.saveToIm(ims{i}, 16, obj.Paths.filtfolder, sceneName, sprintf("_%.1f", fwhms(i)))
             end
         end
         
+        function saveFilterDiag_tif(obj, sceneName, ims, fwhms)
+            for i = 1:length(ims)
+                obj.saveToIm(ims{i}, 8, obj.Paths.diagfolder, sceneName, sprintf("_%.1f", fwhms(i)))
+            end
+        end
+
+        function ims = loadFilterDiag_tif(obj, sceneName, fwhms)
+            ims = cell(length(fwhms), 1);
+            for i = 1:length(fwhms)
+                ims{i} = obj.loadFromIm(8, obj.Paths.diagfolder, sceneName, sprintf("_%.1f", fwhms(i)));
+            end
+        end
+
         function saveFilterArray_mat(obj, sceneName, im)
             obj.saveToMat(im, obj.Paths.filtfolder, sceneName, "_array")
         end
@@ -222,6 +235,12 @@ classdef FileHandler < handle
                 imwrite(im_aop, fnamegen("aop"), 'jpg');
                 imwrite(im_dolp, jet(180), fnamegen("dolp"), 'jpg');
                                 Logger.log(LogLevel.INFO, '      Polarisation files %s saved\n', f);
+            end
+        end
+
+        function savePolarDiag_tif(obj, setName, ims, fwhms)
+            for i = 1:length(ims)
+                obj.saveToIm(ims{i}, 8, obj.Paths.diagfolder, setName, sprintf("_%.1f", fwhms(i)))
             end
         end
 
@@ -362,15 +381,25 @@ classdef FileHandler < handle
             end
         end
 
-        function data = loadFromIm(obj, relPath, fName, suffix, format)
+        function I = loadFromIm(obj, bitDepth, relPath, fName, suffix, format)
             % Load data from an image file
 
-            if nargin<5, format = "tif"; end
-            if nargin<4, suffix = ""; end
+            if nargin<6, format = "tif"; end
+            if nargin<5, suffix = ""; end
 
             [~, f]      = fileparts(fName); 
             fname       = fullfile(obj.Paths.datapath, relPath, f + suffix + "." + format);
             data        = imread(fname);
+            switch bitDepth
+                case 1
+                    I = data;
+                case 8
+                    I = double(data)/(2^8-1);
+                case 16
+                    I = double(data)/(2^16-1);
+                otherwise
+                    error("Unknown bit-depth")
+            end
         end
 
         function saveToMat(obj, im, relPath, fName, suffix, verbose)
