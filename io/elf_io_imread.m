@@ -19,6 +19,12 @@ errorOccurred = '';
 switch lower(ext)
     case {'.tif', '.tiff', '.jpg', '.jpeg', '.bmp', '.gif', '.png', '.ppm'}
         im = imread(fullfilename);
+        meta_info = imfinfo(fullfilename);         % read exif information
+        if lower(meta_info.UniqueCameraModel) == "basler aca4096-40uc"
+            if meta_info.ColorType == "grayscale"
+                im = demosaic(im, 'rggb'); % produces a MxNx3 linear output image
+            end
+        end
     case '.dng'
         try
             im = elf_io_loaddng(fullfilename);

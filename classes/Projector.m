@@ -17,6 +17,7 @@ classdef Projector
         MidPoint(1,2) double         % image centre in h/w
         PixPerMM(1,1) double         % pixel density (assumed to be equal in both dimensions) of the chip
         CorrFocalLength(1,1) double  % the "effective" focal length (real focal length * a correction factor to match the observed image circle)
+        k(1,1) double                % factor k for the general fisheye projection if ProjectionType is "general"
     end
 
     properties (Dependent,Transient)
@@ -34,7 +35,7 @@ classdef Projector
     %% CONSTRUCTORS %%
     %%%%%%%%%%%%%%%%%%
     methods
-        function obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength)
+        function obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength, k)
             % PROJECTOR Construct an instance of this class directly
             % obj = Projector(imSize, projectionType, [erAzi, erEle, midPoint, pixPerMM, corrFocalLength])
             %
@@ -48,6 +49,7 @@ classdef Projector
                 midPoint (1,2) double = [(imSize(1)+1)/2, (imSize(2)+1)/2]
                 pixPerMM (1,1) double = NaN
                 corrFocalLength (1,1) double = 8
+                k (1,1) double = 0
             end
 
             obj.Size = imSize;
@@ -56,6 +58,7 @@ classdef Projector
             obj.ErEle = erEle;
             obj.MidPoint = midPoint;
             obj.CorrFocalLength = corrFocalLength;
+            obj.k = k;
 
             if isnan(pixPerMM)
                 % set pixPerMM to create a filled image
@@ -68,7 +71,7 @@ classdef Projector
     end
 
     methods(Static)
-        function obj = fromInfoStructs(I_info, projInfo, erAzi, erEle)
+        function obj = fromInfoStructs(I_info, projInfo, erAzi, erEle, k)
             %PROJECTOR.FROMINFOSTRUCTS Construct an instance of this class from info structs
             %
             % Inputs:
@@ -88,6 +91,7 @@ classdef Projector
                 projInfo (1,1) struct
                 erAzi (1,3) double = [-90, 0.1, 90]
                 erEle (1,3) double = [90, -0.1, -90]
+                k (1,1) double = 0
             end
 
             Logger.log(LogLevel.INFO, 'Creating a Projector object for %s camera\n', I_info.Model{1})
@@ -102,7 +106,7 @@ classdef Projector
             corrFocalLength = I_info.FocalLength * projInfo.RCorr;   
             midPoint = [(imSize(1)+1)/2+projInfo.HCorr; (imSize(2)+1)/2+projInfo.WCorr];        % centre of image
 
-            obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength);   
+            obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength, k);   
         end
 
         function obj = fromImageCircle(oldProj, imageCircleRadius_deg)
@@ -125,7 +129,8 @@ classdef Projector
                             oldProj.ErEle, ...
                             midPoint, ...
                             oldProj.PixPerMM, ...
-                            oldProj.CorrFocalLength);
+                            oldProj.CorrFocalLength, ...
+                            oldProj.k);
         end
     end
 
@@ -146,6 +151,8 @@ classdef Projector
                     theta_deg = 2 * atand(R_mm / 2 / obj.CorrFocalLength);
                 case "orthographic"
                     theta_deg = asind(R_mm / obj.CorrFocalLength);
+                case "general"
+                    theta_deg = asind(R_mm / obj.CorrFocalLength * obj.k) / obj.k;
                 otherwise
                     error('Unknown method')
             end
@@ -162,6 +169,8 @@ classdef Projector
                     R_mm = 2 * obj.CorrFocalLength * tand(theta_deg / 2);
                 case "orthographic"
                     R_mm = obj.CorrFocalLength * sind(theta_deg);
+                case "general"
+                    R_mm = obj.CorrFocalLength/obj.k * sind(obj.k*theta_deg);
                 otherwise
                     error('Unknown method')
             end
