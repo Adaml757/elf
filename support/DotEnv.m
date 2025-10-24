@@ -181,6 +181,7 @@ classdef DotEnv
             %   p = extractValues(obj, 'MODULE_1', {'MY_KEY_1', 'double'; 'MY_KEY_2, 'char'})
             %       stores 'MODULE_1_MY_KEY_1' in p.myKey1 as a double, and 'MODULE_1_MY_KEY_2' in p.myKey2 as a char vector
 
+            p = [];
             for i = 1:size(extMat, 1)
                 fieldName = extMat{i, 1};
                 conversionType = extMat{i, 2};
