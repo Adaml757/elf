@@ -139,7 +139,7 @@ switch proj
     case 'equirectangular'
         % plot grid
         hold(ha, 'on');
-        plot(ha, I_info.grids.scene.rect.x, I_info.grids.rect.y, 'k:');
+        plot(ha, I_info.grids.scene.rect.x, I_info.grids.scene.rect.y, 'k:');
         
         %calculate x-ticks and y-ticks
         azi = I_info.grids.scene.azi; % This information should have been added during projection

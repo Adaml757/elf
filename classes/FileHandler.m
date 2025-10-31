@@ -262,11 +262,13 @@ classdef FileHandler < handle
 
         %% Mean image
         function saveMeanImage_tif(obj, im)
-            imwrite(im, obj.Paths.fname_meanimg_tif, 'tif', 'Compression', 'lzw') % save mean image as tif
+            I = uint16((2^16-1)*im);
+            imwrite(I, obj.Paths.fname_meanimg_tif, 'tif', 'Compression', 'lzw') % save mean image as tif
         end
 
         function saveMeanImage_jpg(obj, im)
-            imwrite(im2uint8(im), obj.Paths.fname_meanimg_jpg, 'jpeg') % save mean image as jpg
+            I = uint8((2^8-1)*im);
+            imwrite(I, obj.Paths.fname_meanimg_jpg, 'jpeg') % save mean image as jpg
         end
 
         function data = loadMeanImage_tif(obj)

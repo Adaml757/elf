@@ -117,7 +117,7 @@ function av = sub_average(data, meandim, intmeantype)
         case 'median'
             av = nanmedian(data, meandim);
         case 'logmean'
-            av = exp(nanmean(log(data), meandim));
+            av = exp(nanmean(log(data), meandim)); % FIXME: This is not appropriately dealing with negative numbers. Is there a good way? Maybe set it to the equivalent of 1 count (better than missing value) and send a warning
         otherwise
             error('Unknown mean type: %s', intmeantype);
     end
