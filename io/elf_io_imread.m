@@ -12,7 +12,7 @@ function [im, errorOccurred] = elf_io_imread(fullfilename, ignoreErrors)
 %
 % See also elf_info_load, elf_io_loaddng.
 
-if nargin < 2, ignoreErrors = false; end % throw an error if any error occurs (set to true to continue to next dataset)
+if nargin < 2 || isempty(ignoreErrors), ignoreErrors = false; end % throw an error if any error occurs (set to true to continue to next dataset)
 
 [~,~,ext] = fileparts(fullfilename); % using info.Format does not work for raw files, as they are usually tif format
 errorOccurred = '';

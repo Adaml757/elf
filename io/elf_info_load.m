@@ -14,8 +14,20 @@ warning(temp); % turn warnings back on
 
 switch lower(ext)
     case {'.tif', '.tiff'}
-        info = info(1);
-        info.ColorMatrix2       = 0;
+        if isfield(info, "UniqueCameraModel") && lower(info.UniqueCameraModel)=="basler aca4096-40uc"
+            % create copies of some fields to match DNG EXIF formatting
+            info.DigitalCamera.ExposureTime = info.ExposureTime;      % exposure time in seconds
+            info.DigitalCamera.ISOSpeedRatings = info.ISOSpeedRatings;
+            info.DigitalCamera.FNumber = info.FNumber;
+            info.DigitalCamera.ExposureBiasValue = info.BrightnessValue;
+            info.DigitalCamera.FocalLength = info.FocalLength;
+            info.DigitalCamera.Gain = round(10*log10((info.iso/100).^2));
+            info.DigitalCamera.DateTimeOriginal = datestr(datenum(info.FileModDate, "dd-mmm-yyyy HH:MM:SS"), 'yyyy:mm:dd HH:MM:SS'); % NOTE: There is also info.DateTime (e.g. "9471270233934"), in ns, from ChunkTimestamp
+            info.ChipTemperature = info.UnknownTags.Value; % Chip temperature in C
+        else
+            info = info(1);
+            info.ColorMatrix2       = 0;
+        end
     case {'.jpg', '.jpeg'}
         info.BitsPerSample      = ones(1, info.NumberOfSamples) * info.BitDepth / info.NumberOfSamples;
         info.SamplesPerPixel    = info.NumberOfSamples;

@@ -3,11 +3,19 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
 %
 % Inputs:
 %   info - 1 x n info structure, containing the exif information of the raw image files (created by elf_info_collect)
+%
+% Output:
+%   srcs - NaN: No calibration available, or poorly predictable point of the calibration curve
+%          1: Dark level is acceptably well known from calibration
+%          2: This black level comes from a single dark image
+%          3: This black level comes from linearly interpolated dark images
+%          4: Temperature/exposure combination makes this point unreliable
+%          5: Poorly predictable point of the calibration curve, e.g. because of unreliable noise reduction algorithms kicking in
 
                     Logger.log(LogLevel.INFO, '      Calculating black levels / reading dark images ...\n');
 
     darkFolder = fullfile(fileparts(info(1).Filename), 'dark');
-    exp        = arrayfun(@(x) x.DigitalCamera.ExposureTime, info);      % exposure time in seconds
+    ex         = arrayfun(@(x) x.DigitalCamera.ExposureTime, info);      % exposure time in seconds
     iso        = arrayfun(@(x) x.DigitalCamera.ISOSpeedRatings, info);   % ISO speed
     t          = arrayfun(@(x) datenum(x.DigitalCamera.DateTimeOriginal, 'yyyy:mm:dd HH:MM:SS'), info); % date and time
     srcs       = nan(size(iso));
@@ -23,10 +31,10 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
             blackLevels = 600 * ones(length(iso), 3);
     
             % 1 (ISO<=6400, EXP<=1): Dark level is within +-10 counts of 400, so accept these
-            sel = iso<=6400 & exp<=1;
+            sel = iso<=6400 & ex<=1;
             srcs(sel) = 1; % 1: using calibration or default black level
             for c = 1:3
-                XX = [ones(length(iso), 1) iso(:) exp(:) iso(:).*exp(:)];
+                XX = [ones(length(iso), 1) iso(:) ex(:) iso(:).*ex(:)];
                 calibLevels = XX*rf_mean{c};
                 blackLevels(sel, c) = calibLevels(sel); 
             end
@@ -35,8 +43,31 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
             blackLevels = 400 * ones(length(iso), 3);
         
             % 1 (ISO<=1600, EXP<=1): Dark level is within +-10 counts of 400, so accept these
-            srcs(iso<=1600 & exp<=1) = 1; % 1: iso<=1600 and exp<=1; here, calib shows that noise is low
+            srcs(iso<=1600 & ex<=1) = 1; % 1: iso<=1600 and exp<=1; here, calib shows that noise is low
     
+        case "aca4096-40uc"
+            para = elf_para;
+            calibfilefolder = para.fh.Paths.calibfolder; % Where to find the finished calibration files
+            load(fullfile(calibfilefolder, 'basler aca4096-40uc', 'noise.mat'), 'p_sig', 'p_const', 'ch_corr');
+            gain = round(10*log10((iso/100).^2));
+            gainfac = db2mag(gain);
+            % gainfac = iso/100; % the multiplication factor for each gain level
+            T = arrayfun(@(x) x.ChipTemperature, info); % exposure time in seconds
+
+            % First, calculate sigmoid black level function (valid for ex<=2)
+            blackLevels = p_sig(1)*gainfac.*exp(p_sig(2)*log10(ex));
+            blackLevelOffset = interp1(db2mag([0 6 12 18 24]), p_sig(3:7), gainfac, "linear", "extrap");
+            blackLevels = blackLevels + blackLevelOffset;
+            % now replace values for ex>2 with constant 
+            sel = ex>2;
+            blackLevels(sel) = interp1(db2mag([0 6 12 18 24]), p_const, gainfac(sel));
+            blackLevels = [blackLevels(:)/ch_corr(1) blackLevels(:)/ch_corr(2) blackLevels(:)/ch_corr(3)];
+
+            % Warn if temperature is above 50, and exposure time >100ms
+            srcs(T>50 & ex>0.1) = 4;
+            % Warn if 1s < exposure < 5s, and gain>6: Unreliable
+            srcs(ex>=1 & ex<=5 & gainfac>2) = 5;
+
         otherwise
             % For an unknown camera format, try with the manufacturer-supplied black level
             Logger.log(LogLevel.INFO, '          No calibration exists for this camera.\n');
@@ -49,7 +80,7 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
 
     % 2 (dark images): Load all dark images and apply them
     dark = sub_loadDarkImages(darkFolder, imgformat);
-    [blackLevels, srcs, warnings] = sub_applyDarkImages(blackLevels, srcs, dark, iso, exp, t);
+    [blackLevels, srcs, warnings] = sub_applyDarkImages(blackLevels, srcs, dark, iso, ex, t);
 
     % 2.5 distribute blackLevels to info struct
     blackLevels_cell = arrayfun(@(i) blackLevels(i, :), 1:size(blackLevels, 1), 'UniformOutput', false);
@@ -109,7 +140,7 @@ function dark = sub_loadDarkImages(darkFolder, imgformat)
     end
 end
 
-function [blackLevel, srcs, warnings] = sub_applyDarkImages(blackLevel, srcs, dark, iso, exp, t)
+function [blackLevel, srcs, warnings] = sub_applyDarkImages(blackLevel, srcs, dark, iso, ex, t)
     % apply the dark measurements
     warnings = {};
 
@@ -128,7 +159,7 @@ function [blackLevel, srcs, warnings] = sub_applyDarkImages(blackLevel, srcs, da
             for i = 1:length(uIso)
                 thisIso = uIso(i);
                 selDark = dark.iso==thisIso & dark.exp==thisExp;
-                selLight = iso==thisIso & exp==thisExp;
+                selLight = iso==thisIso & ex==thisExp;
 
                 tLight = t(selLight);
                 tDark  = dark.t(selDark);
