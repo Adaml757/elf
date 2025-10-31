@@ -443,7 +443,7 @@ classdef Projector
 
             Logger.log(LogLevel.INFO, '\tCalculating projection constants...\n');
             [azi_grid, ele_grid] = meshgrid(azi, ele);   % grid of desired angles
-            [w_im, h_im]         = obj.rect2pix(azi_grid, ele_grid, rotation);
+            [w_im, h_im]         = obj.rect2pix(azi_grid, ele_grid, ViewDir.H, rotation); % TODO: Use para.ana.imageDirection?
             projection_ind       = obj.sub2ind(obj.Size, w_im, h_im);
             Logger.log(LogLevel.INFO, '\bdone.\n');
         end

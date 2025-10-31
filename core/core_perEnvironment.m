@@ -26,7 +26,7 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
             fh = figure(22); clf; 
             hp = uipanel('Parent', fh); 
             hi = [];
-            thumbs = zeros(100, 100, infoSum.SamplesPerPixel, length(allFiles), infoSum.class{1});      % pre-allocate for thumbnails of all processed images
+            thumbs = zeros(100, 100, infoSum.SamplesPerPixel, length(allFiles), "double");      % pre-allocate for thumbnails of all processed images
         end
         
         for imnr = 1:length(allFiles)
@@ -77,8 +77,8 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
         elf_plot_image(meanImage, infoSum, p3, 'equirectangular', infoSum.linims);
         
         %% Save output to tif and jpg
-        para.fh.saveMeanImage_tif(uint16(meanImage));
-        para.fh.saveMeanImage_jpg(uint16(meanImage));
+        para.fh.saveMeanImage_tif(meanImage);
+        para.fh.saveMeanImage_jpg(meanImage);
     end
     
     if para.ana.calculateInt
@@ -93,7 +93,7 @@ function [para, infoSum] = core_perEnvironment(para, infoSum, verbose)
         elf_analysis_writestats(intMean, para.fh.Paths.fname_stats);
                 
         %% Plot results
-        h = elf_plot_intSummary(intMean, uint16(meanImage), infoSum, para.plot, para.fh.Paths.dataset, length(fNames_im));
+        h = elf_plot_intSummary(intMean, meanImage, infoSum, para.plot, para.fh.Paths.dataset, length(fNames_im));
         
         %% Save output to pdf and tif
         para.fh.saveMeanElfPlot_jpg(h.fh);

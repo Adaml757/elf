@@ -73,7 +73,7 @@ if ~any(imean>0)
     warning('All radiance values are below 0. The image is severely underexposed!');
     axLims = axis(h.ahMainPlot);
 else
-    cmin = log10(min(imean(imean>0)));
+    cmin = log10(min(imean(isreal(imean) & imean>0)));
     cmax = log10(max(imean));
     c = mean([cmin cmax]); % Use the log mean of the min and max of the black (last channel) me(di)an curve as x-centre
     

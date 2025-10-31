@@ -51,7 +51,7 @@ switch para.ana.targetProjection
         % into an equirectangular output image
         projection_ind = proj.calculateProjection();
         infoSum.projs.scene = proj;
-        infoSum.grids.scene = proj.getProjectionInfo(0, para.ana.imageDirection);
+        infoSum.grids.scene = proj.getProjectionInfo(0, para.ana.imageDirection(1));
         projSize = proj.RectSize;
 
     case {"equisolid", "equidistant", "stereographic", "orthographic"}
