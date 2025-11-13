@@ -314,6 +314,7 @@ classdef Calibrator
             else
                 Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
                 % Calculate excentricity and vignetting correction, and store in persistents
+                %% FIXME: Adjust for new calibration, and use Projector to calculate excentricity
                 mid     = [1+(height-1)/2; 1+(width-1)/2];   % centre of image (x/y, h/w)
                 r_full  = 8 * min([height width]) / 24;      % theoretical value for 24mm high chip that is fully covered by fisheye circular image
                 [y, x]  = meshgrid(1:width, 1:height);       % x/y positions of all points in the image

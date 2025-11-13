@@ -63,6 +63,7 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
             blackLevels(sel) = interp1(db2mag([0 6 12 18 24]), p_const, gainfac(sel));
             blackLevels = [blackLevels(:)/ch_corr(1) blackLevels(:)/ch_corr(2) blackLevels(:)/ch_corr(3)];
 
+            srcs(:) = 1;
             % Warn if temperature is above 50, and exposure time >100ms
             srcs(T>50 & ex>0.1) = 4;
             % Warn if 1s < exposure < 5s, and gain>6: Unreliable
