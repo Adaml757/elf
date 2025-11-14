@@ -346,6 +346,28 @@ classdef Projector
             [X, Y, Z]    = obj.pix2cart(w, h, [0,0], 0);
             [w2, h2]     = targetProjector.cart2pix(X, Y, Z, [0,0], rotAroundOptAx, roundIt);
         end
+
+        function theta_deg = pix2theta(obj, w, h)
+            % PIX2THETA translates w/h pixel positions into an angle theta (from the optical axis)
+            %
+            % [X, Y, Z] = obj.pix2cart(obj, [w, h, optAx, rotAroundOptAx])
+            
+            arguments
+                obj (1,1) Projector
+                w double = []
+                h double = []
+            end
+
+            if isempty(w) || isempty(h)
+                [w, h] = meshgrid(1:obj.Size(2), 1:obj.Size(1));
+            end
+
+            h_rel = h-obj.MidPoint(1);
+            w_rel = w-obj.MidPoint(2);
+            R_pix = sqrt(h_rel.^2 + w_rel.^2); % each point's radial excentricity on the sensor (in pixels)
+            R_mm  = R_pix / obj.PixPerMM;      % each point's radial excentricity on the sensor (in mm)
+            theta_deg = obj.r2theta(R_mm);     % angle to the optical axis
+        end
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
