@@ -45,14 +45,14 @@ function [info, srcs, warnings] = calculateBlackLevels(info, imgformat)
             % 1 (ISO<=1600, EXP<=1): Dark level is within +-10 counts of 400, so accept these
             srcs(iso<=1600 & ex<=1) = 1; % 1: iso<=1600 and exp<=1; here, calib shows that noise is low
     
-        case "aca4096-40uc"
+        case {"aca4096-40uc", "basler aca4096-40uc"}
             para = elf_para;
             calibfilefolder = para.fh.Paths.calibfolder; % Where to find the finished calibration files
             load(fullfile(calibfilefolder, 'basler aca4096-40uc', 'noise.mat'), 'p_sig', 'p_const', 'ch_corr');
-            gain = round(10*log10((iso/100).^2));
-            gainfac = db2mag(gain);
-            % gainfac = iso/100; % the multiplication factor for each gain level
-            T = arrayfun(@(x) x.ChipTemperature, info); % exposure time in seconds
+            gain = round(10*log10((iso/100).^2)); % gain is saved as ISO -> calculated back to gain
+            gainfac = db2mag(gain); % calculate gain muliplication factor
+
+            T = arrayfun(@(x) x.ChipTemperature, info); % chip temperature
 
             % First, calculate sigmoid black level function (valid for ex<=2)
             blackLevels = p_sig(1)*gainfac.*exp(p_sig(2)*log10(ex));

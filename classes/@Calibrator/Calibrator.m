@@ -12,6 +12,7 @@ classdef Calibrator
         Width
         SpectralMethod
         ProjectionInfo
+        SerialNumber
     end
 
     properties(Access=protected)
@@ -32,7 +33,7 @@ classdef Calibrator
     %% CONSTRUCTOR %%
     %%%%%%%%%%%%%%%%%
     methods
-        function obj = Calibrator(camString, wh, spectralMethod)
+        function obj = Calibrator(camString, wh, spectralMethod, serialNumber)
             %CALIBRATOR Construct an instance of this class
             %   Detailed explanation goes here
             % Inputs:
@@ -44,14 +45,16 @@ classdef Calibrator
             %                                   general use outside of laboratory situations
             %                 'wb'            - simply applies the normal white balance suggested by the camera
 
-            if nargin<3, spectralMethod = "col"; end
+            if nargin<4, serialNumber = ""; end
+            if nargin<3 || spectralMethod=="", spectralMethod = "col"; end
             Logger.log(LogLevel.INFO, 'Creating a Calibrator object for %s camera\n', camString)
             obj.CameraString = camString;
             obj.Width  = wh(1);
             obj.Height = wh(2);
             obj.SpectralMethod = spectralMethod;
-            obj = obj.loadAbsoluteCalib(); % load the absolute and vignetting correction
-            obj = obj.loadSpectralCalibration(); % load the spectral correction
+            obj.SerialNumber = serialNumber;
+
+            obj = obj.loadCalib(); % load the absolute, spectral and vignetting correction
             obj.ProjectionInfo = obj.loadProjectionInfo();
         end
     end
@@ -89,6 +92,11 @@ classdef Calibrator
             confFactors = obj.getSaturationLevel(info) - info.blackLevels(:)';
         
             switch lower(obj.CameraString)
+                case {"aca4096-40uc", "basler aca4096-40uc"}
+                    gain = round(10*log10((iso/100).^2)); % gain is saved as ISO -> calculated back to gain
+                    gainfac = db2mag(gain); % calculate gain muliplication factor
+                    settingFactor  = exp * gainfac;
+
                 case {'nikon d800e', 'nikon d810', 'nikon z 6'}
                     % 2. ISO/EXP/APT 2016 calibration
         
@@ -114,7 +122,7 @@ classdef Calibrator
             
             % correct for vignetting
             switch apt
-                case {3.5, 4, 4.5, 4.8, 5.6}
+                case {1.4, 3.5, 4, 4.5, 4.8, 5.6} % 1.4 is for Basler camera
                     apInd = 1; % treat as aperture 3.5 for vignetting
                 case {8, 9, 10, 11, 14}
                     apInd = 2; % treat as aperture 8 for vignetting
@@ -138,14 +146,17 @@ classdef Calibrator
             %       
             % Outputs:
             %   im          - M x N x 3 double, calibrated digital image (in photons/nm/s/sr/m^2)
-            %
-            % See also: elf_main1_perScene, elf_info_load, elf_io_loaddng
 
             % warning('Using standard D810 colour matrix'); 
             % wb_multipliers = [1.9531 1.0000 1.3359];
             wb_multipliers  = (info.AsShotNeutral).^-1;
             wb_multipliers  = wb_multipliers/wb_multipliers(2); % normalise to green channel
             
+            if obj.CameraString == "basler aca4096-40uc" || obj.CameraString == "aca4096-40uc"
+                % For this camera, spectral calibration is included in the absolute calibration
+                return
+            end
+
             switch obj.SpectralMethod
                 case 'colmat'
                     % Full deconvolution of channels to reconstruct a spectrum that is flat between 400-500, 500-600 and 600-700 nm
@@ -154,7 +165,7 @@ classdef Calibrator
                     % correct for spectral and absolute sensitivity
                     imsize = size(im);
                     im     = reshape(im, [imsize(1)*imsize(2) imsize(3)]);  % Reshape image to allow all pixels to be accessed simultaneously in matrix division
-                    im     = obj.SpectralMatrix \ im';                                  % Solve equation system assuming constant photon radiance in each of the three spectral bins (see elf_calib_2016full_spectral1)
+                    im     = obj.SpectralMatrix \ im';                      % Solve equation system assuming constant photon radiance in each of the three spectral bins (see elf_calib_2016full_spectral1)
                     im     = reshape(im', imsize);                          % Reshape to original matrix shape
             
                     % Finally, apply a correction factor based on wide-spectrum bright lights
@@ -187,32 +198,63 @@ classdef Calibrator
     %% ABSOLUTE FUNCTIONS %%
     %%%%%%%%%%%%%%%%%%%%%%%%
     methods(Hidden, Access=protected)
-        function obj = loadAbsoluteCalib(obj)
-            % Calibrator.loadAbsoluteCalib loads the absolute and vignetting calibration matrix for this Calibrator object from file
+        function obj = loadCalib(obj)
+            % Calibrator.loadCalib loads the absolute, spectral and vignetting calibration matrix for this Calibrator object from file
             % The matrices are stored in obj.VignettingMat and obj.AbsoluteMat, from where it is later used in obj.applyAbsolute
-            Logger.log(LogLevel.INFO, '\tCreating/loading vignetting correction matrix\n')
+            % The correct spectral matrix (depending on obj.SpectralMethod) is extracted and stored in obj.SpectralMatrix, from where it is later used in obj.applySpectral
+
+            Logger.log(LogLevel.INFO, "\tCreating/loading calibration correction matrices\n")
+            para = elf_para({}, "noenv");
+
+            % determine which file to load
             switch lower(obj.CameraString)
-                case {'nikon d800e', 'nikon d810', 'nikon z 6'}
+                case {"nikon d800e", "nikon d810", "nikon z 6"}
+                    camstring = "nikon d810"; % use d810 calibration for all these models
+                case {"aca4096-40uc", "basler aca4096-40uc"}
+                    camstring = "basler aca4096-40uc";
+                otherwise
+                    camstring = lower(obj.CameraString);
+            end
+
+            switch camstring
+                case {"nikon d800e", "nikon d810", "nikon z 6"}
                     
                     % 1. ISO/EXP/APT 2016 calibration
-                    para    = elf_para({}, "noenv");
-                    TEMP    = load(fullfile(para.fh.Paths.calibfolder, 'nikon d810', 'absolute.mat'));
+                    TEMP    = load(fullfile(para.fh.Paths.calibfolder, camstring, "absolute.mat"));
                     obj.AbsoluteFactor = TEMP.wlcf;
                     
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat('nikon d810', obj.Height, obj.Width);
+                    obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width);
         
-                case 'nikon d850'
+                case "nikon d850"
         
                     % 1. ISO/EXP/APT calibration
-                    para    = elf_para({}, "noenv");
-                    TEMP    = load(fullfile(para.fh.Paths.calibfolder, obj.CameraString, 'absolute.mat'));
+                    TEMP    = load(fullfile(para.fh.Paths.calibfolder, camstring, "absolute.mat"));
                     obj.Acf = TEMP.acf;
                     obj.AbsoluteFactor = TEMP.wlcf;
                                 
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat('nikon d810', obj.Height, obj.Width);
+                    obj.VignettingMat = Calibrator.getVignMat("nikon d810", obj.Height, obj.Width);
                     
+                case "basler aca4096-40uc"
+                    % absolute calibration is dependent on camera serial number; if not available, or no calibration exists for this one, use standard
+
+                    % 1. ISO/EXP/APT calibration
+                    if obj.SerialNumber==""
+                        fname = fullfile(para.fh.Paths.calibfolder, camstring, "absolute.mat");
+                    else
+                        fname = fullfile(para.fh.Paths.calibfolder, camstring, "absolute_"+obj.SerialNumber+".mat");
+                        if ~exist(fname, "file")
+                            fname = fullfile(para.fh.Paths.calibfolder, camstring, "absolute.mat");
+                        end
+                    end
+
+                    TEMP = load(fname);
+                    obj.AbsoluteFactor = TEMP.wlcf; % This includes the spectral calibration for this camera type
+                                
+                    % 2. Vignetting
+                    obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width);
+
                 otherwise
                     % For an unknown camera, use no calibration correction; an uncalibrated image is better than none
         
@@ -220,16 +262,27 @@ classdef Calibrator
                     obj.AbsoluteFactor = [1 1 1];
                                 
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat('nikon d810', obj.Height, obj.Width);
+                    obj.VignettingMat = Calibrator.getVignMat("nikon d810", obj.Height, obj.Width);
         
-                    warning('No intensity calibration available for this camera (%s) ', obj.CameraString);
+                    warning("No intensity calibration available for this camera (%s) ", obj.CameraString);
             end
 
             % pre-calculate mats for faster calibration later
-            Logger.log(LogLevel.INFO, '\tCreating/loading absolute sensitivity correction matrix\n')
+            Logger.log(LogLevel.INFO, "\tCreating/loading absolute sensitivity correction matrix\n")
             obj.AbsoluteMat = Calibrator.getAbsoluteMat(obj.CameraString, obj.Height, obj.Width, obj.AbsoluteFactor);
-        end
 
+            Logger.log(LogLevel.INFO, "\tCreating/loading spectral correction matrix\n")
+
+            % load from file, and extract the right matrix depending on obj.SpectralMethod
+            switch obj.SpectralMethod
+                case "colmat" % Full deconvolution of channels to reconstruct a spectrum that is flat between 400-500, 500-600 and 600-700 nm
+                    obj.SpectralMatrix = obj.getColMat(camstring);
+                case "col" % Scale individual channels so each one represents the weighted average spectral photon radiance over that pixels sensitivity
+                    obj.SpectralMatrix = obj.getCol(camstring);
+                case "wb"
+                    % Uses the white balance multipliers from each files exif information
+            end
+        end
 
         function satLevel = getSaturationLevel(obj, info)
             % Calibrator.getSaturationLevel returns the saturation level for this camera (before dark correction)
@@ -360,33 +413,11 @@ classdef Calibrator
     %%%%%%%%%%%%%%%%%%%%%%%%
     %% SPECTRAL FUNCTIONS %%
     %%%%%%%%%%%%%%%%%%%%%%%%
-    methods(Hidden, Access=protected)
-        function obj = loadSpectralCalibration(obj)
-            % Calibrator.loadSpectralCalibration loads the spectral calibration matrix for this Calibrator object from file
-            % The correct matrix (depending on obj.SpectralMethod) is extracted and stored in obj.SpectralMatrix, from where it is later used in obj.applySpectral
+   
 
-            Logger.log(LogLevel.INFO, '\tCreating/loading spectral correction matrix\n')
-
-            % determine which file to load
-            switch lower(obj.CameraString)
-                case {'nikon d800e', 'nikon d810', 'nikon z 6'}
-                    camstring = 'nikon d810'; % use d810 calibration for all these models
-                otherwise
-                    camstring = lower(obj.CameraString);
-            end
-
-            % load from file, and extract the right matrix depending on obj.SpectralMethod
-            switch obj.SpectralMethod
-                case 'colmat' % Full deconvolution of channels to reconstruct a spectrum that is flat between 400-500, 500-600 and 600-700 nm
-                    obj.SpectralMatrix  = obj.getColMat(camstring);                                
-                case 'col' % Scale individual channels so each one represents the weighted average spectral photon radiance over that pixels sensitivity
-                    obj.SpectralMatrix  = obj.getCol(camstring);                    
-                case 'wb'
-                    % Uses the white balance multipliers from each files exif information
-            end
-        end
-    end
-
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% PROJECTION FUNCTIONS %%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
     methods(Hidden, Access=protected)
         function ProjectionInfo = loadProjectionInfo(obj)
             % Calibrator.loadProjectionInfo loads the spatial calibration information for this Calibrator object
@@ -437,6 +468,10 @@ classdef Calibrator
         end
     end
 
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% STATIC LOADING FUNCTIONS %%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
         function colmat = getColMat(camstring)
             % Calibrator.getColMat loads or calculates the color correction matrix for this camera type.
@@ -457,8 +492,12 @@ classdef Calibrator
                 para   = elf_para;
                 fname  = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
                 if isfile(fname)
-                    TEMP    = load(fname, 'colmat');  
-                    colmat  = TEMP.colmat;
+                    try
+                        TEMP    = load(fname, 'colmat');  
+                        colmat  = TEMP.colmat;
+                    catch
+                        error('Colmat method is not possible for this camera: %s', camstring);
+                    end
                 else
                     error('No colour calibration exists for this camera, and colmat method is not possible: %s', camstring);
                 end
@@ -485,15 +524,22 @@ classdef Calibrator
                 col   = storedCol;
             else % load from file
                 Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
-                para  = elf_para;
-                fname = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
-                if isfile(fname)
-                    TEMP    = load(fname, 'col');            
-                    col     = TEMP.col;
-                else
-                    col = [];
+                switch camstring
+                    case "basler aca4096-40uc"
+                        % For this camera, spectral calibration is included in the absolute calibration
+                        col = 1;
+                                    
+                    otherwise
+                        para  = elf_para;
+                        fname = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
+                        if isfile(fname)
+                            TEMP    = load(fname, 'col');            
+                            col     = TEMP.col;
+                        else
+                            col     = [];
+                        end
+                
                 end
-        
                 storedCol     = col;
                 storedColName = camstring;
             end
