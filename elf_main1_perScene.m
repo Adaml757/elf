@@ -40,7 +40,7 @@ end
 
 %% Calculate black levels for all images (from calibration or dark images)
 [info, ~, infoSum.blackWarnings] = Calibrator.calculateBlackLevels(info, imgFormat);
-cal = Calibrator(infoSum.Model{1}, [infoSum.Width infoSum.Height], para.ana.colourCalibType);
+cal = Calibrator(infoSum.Model{1}, [infoSum.Width infoSum.Height], para.ana.colourCalibType, infoSum.SerialNumber);
 proj = Projector.fromInfoStructs(infoSum, cal.ProjectionInfo, para.azi, para.ele2);
 
 %% Set up projection constants
@@ -85,7 +85,7 @@ try
         
         setStart    = scenes(iScene, 1);        % first image in this scene
         setEnd      = scenes(iScene, 2);        % last image in this scene
-        nIms        = setEnd - setStart + 1;  % total number of images in this scene
+        nIms        = setEnd - setStart + 1;    % total number of images in this scene
     
         im_proj     = zeros(projSize(1), projSize(2), projSize(3), nIms);  % pre-allocate
         conf_proj   = im_proj;  % pre-allocate
@@ -139,8 +139,6 @@ try
     
         % Save HDR file as MAT and TIF.
         % TIF is not strictly necessary, but a good diagnostic. 
-        % Cost of saving it: ~300GB/6TB disk space, 2s per scene for calculation/saving = 6.7h extra for the current ~12000 scenes.
-        % Cost of instead recalculating it in main2: 1.5s per scene for loading/converting = 5h extra ".
         para.fh.saveScene_mat(sprintf('scene%03d', iScene), im_HDR_cal);
         I = elf_io_correctdng(im_HDR_cal, info(setStart), 'bright');
     

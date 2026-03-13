@@ -7,12 +7,12 @@ classdef Calibrator
     % See also: elf_main1_perScene, elf_info_load, elf_io_loaddng
 
     properties(SetAccess=immutable)
-        CameraString
-        Height
-        Width
-        SpectralMethod
-        ProjectionInfo
-        SerialNumber
+        CameraString(1, 1) string
+        Height(1, 1) double
+        Width(1, 1) double
+        SpectralMethod(1, 1) string = "col"
+        ProjectionInfo(1, 1) struct
+        SerialNumber(1, 1) string = ""
     end
 
     properties(Access=protected)
@@ -37,25 +37,24 @@ classdef Calibrator
             %CALIBRATOR Construct an instance of this class
             %   Detailed explanation goes here
             % Inputs:
-            %   camString   - camera model (can be extracted from info.Model or infoSum.Model)
-            %   wh          - width and height of images (can be extracted from info.Width and info.Height)
-            %   method      - 'col' (default) - each channel of the output image represents the weighted mean over that pixels sensitivity function, assuming a flat spectrum over its full range
-            %                 'colmat'        - solves the linear equation of all three channels to calculate a spectrum that is flat between 400-500/500-600/600-700nm and would create the same camera output
+            %   camString    - camera model (can be extracted from info.Model or infoSum.Model)
+            %   wh           - width and height of images (can be extracted from info.Width and info.Height)
+            %   method       - 'col' (default) - each channel of the output image represents the weighted mean over that pixels sensitivity function, assuming a flat spectrum over its full range
+            %                  'colmat'        - solves the linear equation of all three channels to calculate a spectrum that is flat between 400-500/500-600/600-700nm and would create the same camera output
             %                                   This method theoretically creates the most interesting result, but is extremely sensitive to saturation in individual channels and can not be recommended for
-            %                                   general use outside of laboratory situations
-            %                 'wb'            - simply applies the normal white balance suggested by the camera
+            %                                   general use outside of laboratory situations - currently not implemented
+            %                  'wb'            - simply applies the normal balance suggested by the camera (used if no calibration exists)
+            %   serialNumber - a serial number string, mainly used for individual absolute/colour calibrations for Basler cameras
 
-            if nargin<4, serialNumber = ""; end
-            if nargin<3 || spectralMethod=="", spectralMethod = "col"; end
+            if nargin>=4, obj.SerialNumber = serialNumber; end
+            if nargin>=3 && spectralMethod~="", obj.SpectralMethod = spectralMethod; end
             Logger.log(LogLevel.INFO, 'Creating a Calibrator object for %s camera\n', camString)
             obj.CameraString = camString;
             obj.Width  = wh(1);
             obj.Height = wh(2);
-            obj.SpectralMethod = spectralMethod;
-            obj.SerialNumber = serialNumber;
 
-            obj = obj.loadCalib(); % load the absolute, spectral and vignetting correction
             obj.ProjectionInfo = obj.loadProjectionInfo();
+            obj = obj.loadCalib(); % load the absolute, spectral and vignetting correction
         end
     end
 
@@ -64,7 +63,7 @@ classdef Calibrator
     %%%%%%%%%%%%%%%%%%%%
     methods
         function [im, conf, confFactors] = applyAbsolute(obj, im, info)
-            % Calibrator.applyAbsolute applies absolute calibration information to a raw photograph.
+            %% Calibrator.applyAbsolute applies absolute calibration information to a raw photograph.
             % [im, conf, conffactors] = obj.applyAbsolute(im, info)
             % For a full calibration, obj.applySpectral must be applied afterwards (or after HDR calculation, if desired)
             %
@@ -84,7 +83,7 @@ classdef Calibrator
             iso         = info.DigitalCamera.ISOSpeedRatings;   % ISO speed
             apt         = info.DigitalCamera.FNumber;           % Aperture F-Stop
         
-            %% Apply calibration
+            % Apply calibration
             % Subtract the camera's black level (saturation level has to be taken into account later)
             im          = im - Calibrator.getBlackLevelMat(obj.Height, obj.Width, info.blackLevels);
             conf        = im; % Use these raw values (after dark subtraction) to define every pixel's confidence: 
@@ -93,23 +92,21 @@ classdef Calibrator
         
             switch lower(obj.CameraString)
                 case {"aca4096-40uc", "basler aca4096-40uc"}
+                    % GAIN/EXP 2025 calibration
                     gain = round(10*log10((iso/100).^2)); % gain is saved as ISO -> calculated back to gain
                     gainfac = db2mag(gain); % calculate gain muliplication factor
                     settingFactor  = exp * gainfac;
 
                 case {'nikon d800e', 'nikon d810', 'nikon z 6'}
-                    % 2. ISO/EXP/APT 2016 calibration
-        
+                    % ISO/EXP/APT 2016 calibration
                     % correct for uneven aperture spacing, and calculate aperture "area" 
                     ev_num      = round(log(apt) / log(sqrt(2)) * 3);
                     apt_even    = sqrt(2).^(ev_num/3);
                     aparea      = pi * (4./apt_even).^2.292; % 2.292 was determined during 2017 aperture calibration
-        
                     settingFactor  = exp * iso * aparea;
                     
                 case 'nikon d850'
-        
-                    % 2. ISO/EXP/APT calibration
+                    % ISO/EXP/APT 2021 calibration
                     acf = obj.Acf(obj.Acf(:, 1)==apt, 2);
                     settingFactor  = exp * iso * acf;
                 
@@ -118,7 +115,7 @@ classdef Calibrator
             end   
             
             % correct for exposure time, ISO setting (gain) and aperture
-            im          = im ./ settingFactor ./ obj.AbsoluteMat;            % counts per second per ISO per aperture
+            im = im ./ settingFactor ./ obj.AbsoluteMat;            % counts per second per ISO per aperture
             
             % correct for vignetting
             switch apt
@@ -136,7 +133,7 @@ classdef Calibrator
 
 
         function im = applySpectral(obj, im, info)
-            % Calibrator.applySpectral applies absolute spectral information to a pre-calibrated photograph.
+            %% Calibrator.applySpectral applies absolute spectral information to a pre-calibrated photograph.
             % im = obj.applySpectral(im, info)
             % For a full calibration, this should be applied after obj.applyAbsolute has been applied
             %
@@ -147,30 +144,17 @@ classdef Calibrator
             % Outputs:
             %   im          - M x N x 3 double, calibrated digital image (in photons/nm/s/sr/m^2)
 
-            % warning('Using standard D810 colour matrix'); 
-            % wb_multipliers = [1.9531 1.0000 1.3359];
-            wb_multipliers  = (info.AsShotNeutral).^-1;
-            wb_multipliers  = wb_multipliers/wb_multipliers(2); % normalise to green channel
-            
             if obj.CameraString == "basler aca4096-40uc" || obj.CameraString == "aca4096-40uc"
                 % For this camera, spectral calibration is included in the absolute calibration
                 return
             end
 
+            wb_multipliers  = (info.AsShotNeutral).^-1;
+            wb_multipliers  = wb_multipliers/wb_multipliers(2); % normalise to green channel
+            
             switch obj.SpectralMethod
                 case 'colmat'
-                    % Full deconvolution of channels to reconstruct a spectrum that is flat between 400-500, 500-600 and 600-700 nm
-            
-            
-                    % correct for spectral and absolute sensitivity
-                    imsize = size(im);
-                    im     = reshape(im, [imsize(1)*imsize(2) imsize(3)]);  % Reshape image to allow all pixels to be accessed simultaneously in matrix division
-                    im     = obj.SpectralMatrix \ im';                      % Solve equation system assuming constant photon radiance in each of the three spectral bins (see elf_calib_2016full_spectral1)
-                    im     = reshape(im', imsize);                          % Reshape to original matrix shape
-            
-                    % Finally, apply a correction factor based on wide-spectrum bright lights
-                    im     = im * 1.0038;
-                    
+                    error("'colmat' spectral method is no longer supported")                    
                 case 'col'
                     % This is the current default:  Scale individual channels so each one represents the weighted average spectral photon radiance
                     %                               over that pixels sensitivity
@@ -195,11 +179,11 @@ classdef Calibrator
 
 
     %%%%%%%%%%%%%%%%%%%%%%%%
-    %% ABSOLUTE FUNCTIONS %%
+    %% LOADING FUNCTIONS %%
     %%%%%%%%%%%%%%%%%%%%%%%%
     methods(Hidden, Access=protected)
         function obj = loadCalib(obj)
-            % Calibrator.loadCalib loads the absolute, spectral and vignetting calibration matrix for this Calibrator object from file
+            %% Calibrator.loadCalib loads the absolute, spectral and vignetting calibration matrix for this Calibrator object from file
             % The matrices are stored in obj.VignettingMat and obj.AbsoluteMat, from where it is later used in obj.applyAbsolute
             % The correct spectral matrix (depending on obj.SpectralMethod) is extracted and stored in obj.SpectralMatrix, from where it is later used in obj.applySpectral
 
@@ -224,7 +208,9 @@ classdef Calibrator
                     obj.AbsoluteFactor = TEMP.wlcf;
                     
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width);
+                    I_info = struct("Height", obj.Height, "Width", obj.Width, "SamplesPerPixel", 3, "FocalLength", 8, "Model", obj.CameraString);
+                    proj = Projector.fromInfoStructs(I_info, obj.ProjectionInfo); %Iinfo needs Height, Width, SamplesPerPixel, FocalLength
+                    obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width, proj);
         
                 case "nikon d850"
         
@@ -234,7 +220,9 @@ classdef Calibrator
                     obj.AbsoluteFactor = TEMP.wlcf;
                                 
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat("nikon d810", obj.Height, obj.Width);
+                    I_info = struct("Height", obj.Height, "Width", obj.Width, "SamplesPerPixel", 3, "FocalLength", 8, "Model", obj.CameraString);
+                    proj = Projector.fromInfoStructs(I_info, obj.ProjectionInfo); %Iinfo needs Height, Width, SamplesPerPixel, FocalLength
+                    obj.VignettingMat = Calibrator.getVignMat("nikon d810", obj.Height, obj.Width, proj);
                     
                 case "basler aca4096-40uc"
                     % absolute calibration is dependent on camera serial number; if not available, or no calibration exists for this one, use standard
@@ -253,7 +241,9 @@ classdef Calibrator
                     obj.AbsoluteFactor = TEMP.wlcf; % This includes the spectral calibration for this camera type
                                 
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width);
+                    I_info = struct("Height", obj.Height, "Width", obj.Width, "SamplesPerPixel", 3, "FocalLength", 1.8, "Model", obj.CameraString);
+                    proj = Projector.fromInfoStructs(I_info, obj.ProjectionInfo); %Iinfo needs Height, Width, SamplesPerPixel, FocalLength
+                    obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width, proj);
 
                 otherwise
                     % For an unknown camera, use no calibration correction; an uncalibrated image is better than none
@@ -262,7 +252,9 @@ classdef Calibrator
                     obj.AbsoluteFactor = [1 1 1];
                                 
                     % 2. Vignetting
-                    obj.VignettingMat = Calibrator.getVignMat("nikon d810", obj.Height, obj.Width);
+                    I_info = struct("Height", obj.Height, "Width", obj.Width, "SamplesPerPixel", 3, "FocalLength", 8, "Model", obj.CameraString);
+                    proj = Projector.fromInfoStructs(I_info, obj.ProjectionInfo); %Iinfo needs Height, Width, SamplesPerPixel, FocalLength
+                    obj.VignettingMat = Calibrator.getVignMat("nikon d810", obj.Height, obj.Width, proj);
         
                     warning("No intensity calibration available for this camera (%s) ", obj.CameraString);
             end
@@ -276,161 +268,58 @@ classdef Calibrator
             % load from file, and extract the right matrix depending on obj.SpectralMethod
             switch obj.SpectralMethod
                 case "colmat" % Full deconvolution of channels to reconstruct a spectrum that is flat between 400-500, 500-600 and 600-700 nm
-                    obj.SpectralMatrix = obj.getColMat(camstring);
+                    error("'colmat' spectral method is no longer supported")
                 case "col" % Scale individual channels so each one represents the weighted average spectral photon radiance over that pixels sensitivity
                     obj.SpectralMatrix = obj.getCol(camstring);
+                    Logger.log(LogLevel.DEBUG, '\t\tCalculating colour matrix\n')
+                    switch camstring
+                        case "basler aca4096-40uc"
+                            % For this camera, spectral calibration is included in the absolute calibration
+                            obj.SpectralMatrix = [];                                        
+                        otherwise
+                            para  = elf_para;
+                            fname = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
+                            if isfile(fname)
+                                TEMP    = load(fname, 'col');            
+                                obj.SpectralMatrix     = TEMP.col;
+                            else
+                                obj.SpectralMatrix     = [];
+                            end                    
+                    end
                 case "wb"
-                    % Uses the white balance multipliers from each files exif information
+                    % Uses the white balance multipliers from each file's exif information
             end
         end
 
+
         function satLevel = getSaturationLevel(obj, info)
-            % Calibrator.getSaturationLevel returns the saturation level for this camera (before dark correction)
+            %% Calibrator.getSaturationLevel returns the saturation level for this camera (before dark correction)
 
             switch lower(obj.CameraString)
                 case {'nikon d800e', 'nikon d810', 'nikon z 6', 'nikon d850'}
                     satLevel = 15520; % 15992 was found in d810 calibration, 15520 is the black value in EXIF file
+                case {"aca4096-40uc", "basler aca4096-40uc"}
+                    satLevel = 4091;
                 otherwise
-                    satLevel = 0.95*info.SubIFDs{1}.WhiteLevel(1);      % white level, this should corresponds to a reasonable saturation level
-            end
-        end
-    end
-
-    methods (Static)
-        function blackLevelMat = getBlackLevelMat(height, width, blackLevels)            
-            % Calibrator.getAbsoluteMat loads or calculates the black level correction matrix for this image width and image height.
-            % This is called during obj.applyAbsolute with the blackLevels for one particular frame.
-            % The matrix is saved in a static class variable, so that at the next frame/dataset, it does not
-            % need to be re-loaded from file, as long as image width and height stay the same.
-            
-            persistent storeBLM;
-            persistent storedBLMName;
-            
-            blmname               = sprintf('%d_%d', height, width);
-            
-            if strcmp(blmname, storedBLMName) && ~isempty(storeBLM)
-                blackLevelMat = storeBLM;
-            else
-                blackLevelMat = ones(height, width, 3);
-                storeBLM      = blackLevelMat;
-                storedBLMName = blmname;
-            end
-
-            blackLevelMat(:, :, 1) = blackLevels(1);
-            blackLevelMat(:, :, 2) = blackLevels(2);
-            blackLevelMat(:, :, 3) = blackLevels(3);
-        end
-
-
-        function absMat = getAbsoluteMat(camstring, height, width, absoluteFactor)
-            % Calibrator.getAbsoluteMat loads or calculates the absolute sensitivity correction matrix for this camera type, image width and image height.
-            % This is called during obj.loadAbsoluteCalibration.
-            % The matrix is saved in a static class variable, so that the next time a Calibrator object for the same camera is created, it does not
-            % need to be re-loaded from file.
-            
-            persistent storeWLCM;
-            persistent storedWLCMName;
-            
-            wlcmname             = sprintf('%s_%d_%d', camstring, height, width);
-            
-            if strcmp(wlcmname, storedWLCMName) && ~isempty(storeWLCM)
-                Logger.log(LogLevel.DEBUG, '\t\tUsing stored matrix\n')
-                absMat           = storeWLCM;
-            else
-                Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
-                absMat = ones(height, width, 3);
-                absMat(:, :, 1) = absoluteFactor(1);
-                absMat(:, :, 2) = absoluteFactor(2);
-                absMat(:, :, 3) = absoluteFactor(3);
-                storeWLCM        = absMat;
-                storedWLCMName   = wlcmname;
+                    satLevel = 0.95*info.SubIFDs{1}.WhiteLevel(1); % white level, this should corresponds to a reasonable saturation level
             end
         end
 
 
-        function vignMat = getVignMat(camstring, height, width)
-            % Calibrator.getVignMat loads or calculates the vignetting matrix for this camera type, image width and image height.
-            % This is called during obj.loadAbsoluteCalibration.
-            % The matrix is saved in a static class variable, so that the next time a Calibrator object for the same camera is created, it does not
-            % need to be re-loaded from file.
-            %
-            % Saving to a file and loading when needed has been tested and takes longer than recalculating on ELFPC (10s v 3s)
-            
-            persistent storedVign;
-            persistent storedVignName;
-            
-            vignname = sprintf('%s_%d_%d', camstring, height, width);
-            
-            if strcmp(vignname, storedVignName) && ~isempty(storedVign)
-                Logger.log(LogLevel.DEBUG, '\t\tUsing stored matrix\n')
-                vignMat    = storedVign;
-            else
-                Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
-                % Calculate excentricity and vignetting correction, and store in persistents
-                %% FIXME: Adjust for new calibration, and use Projector to calculate excentricity
-                mid     = [1+(height-1)/2; 1+(width-1)/2];   % centre of image (x/y, h/w)
-                r_full  = 8 * min([height width]) / 24;      % theoretical value for 24mm high chip that is fully covered by fisheye circular image
-                [y, x]  = meshgrid(1:width, 1:height);       % x/y positions of all points in the image
-                r_all   = sqrt((x-mid(1)).^2 + (y-mid(2)).^2);
-                exc     = real(asind(r_all / 2 / r_full) * 2);  % remove the complex part that happens for excentricities >90
-        
-                % Calculate vignetting correction
-                para    = elf_para;
-                fname   = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'vign_calib.mat');
-                if isfile(fname)
-                    TEMP = load(fname); % holds pf, fitted vignetting-correction function
-                    pf = TEMP.pf;
-                else
-                    warning('No vignetting calibration exists for this camera; not correcting for vignetting');
-                    pf = cat(3, zeros(3, 3), zeros(3, 3), zeros(3, 3), ones(3, 3));
-                end
-                
-                fr      = sub_feval(pf(1, 1, :), exc) / sub_feval(pf(1, 1, :), 0);
-                fg      = sub_feval(pf(1, 2, :), exc) / sub_feval(pf(1, 2, :), 0);
-                fb      = sub_feval(pf(1, 3, :), exc) / sub_feval(pf(1, 3, :), 0);
-                vignMat{1} = cat(3, fr, fg, fb);
-                fr      = sub_feval(pf(2, 1, :), exc) / sub_feval(pf(2, 1, :), 0);
-                fg      = sub_feval(pf(2, 2, :), exc) / sub_feval(pf(2, 2, :), 0);
-                fb      = sub_feval(pf(2, 3, :), exc) / sub_feval(pf(2, 3, :), 0);
-                vignMat{2} = cat(3, fr, fg, fb);
-                fr      = sub_feval(pf(3, 1, :), exc) / sub_feval(pf(3, 1, :), 0);
-                fg      = sub_feval(pf(3, 2, :), exc) / sub_feval(pf(3, 2, :), 0);
-                fb      = sub_feval(pf(3, 3, :), exc) / sub_feval(pf(3, 3, :), 0);
-                vignMat{3} = cat(3, fr, fg, fb);
-                
-                storedVign = vignMat;
-                storedVignName = vignname;
-            end
-
-
-            function y = sub_feval(fun, x)
-                y = fun(1)*x.^3 + fun(2)*x.^2 + fun(3)*x + fun(4);
-            end
-        end
-    end
-
-
-    %%%%%%%%%%%%%%%%%%%%%%%%
-    %% SPECTRAL FUNCTIONS %%
-    %%%%%%%%%%%%%%%%%%%%%%%%
-   
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% PROJECTION FUNCTIONS %%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods(Hidden, Access=protected)
         function ProjectionInfo = loadProjectionInfo(obj)
-            % Calibrator.loadProjectionInfo loads the spatial calibration information for this Calibrator object
+            %% Calibrator.loadProjectionInfo loads the spatial calibration information for this Calibrator object
             % All information is currently stored in this function, but could conceivably be stored in a file instead
             % Note that all information is loaded by camera type, even though it depends on the lens, of course! This is a shorthand to refer to our
             % calibrated camera/lens combinations, because lens information is rarely stored in EXIF information 
 
             ProjectionInfo.Type = "equisolid";
+            ProjectionInfo.PixPerMM = [];
             ProjectionInfo.WCorr = 0; % correction for centre in width (obtained from calibration for imperfect lens)
             ProjectionInfo.HCorr = 0; % correction for centre in height (obtained from calibration for imperfect lens)
             ProjectionInfo.RCorr = 1; % correction multiplier for R (obtained from calibration for imperfect lens)
             ProjectionInfo.ChipHeight = 24.0; % chip height in mm
             ProjectionInfo.ChipWidth = 35.9; % chip width in mm
+            ProjectionInfo.K = 0;
             
             switch lower(obj.CameraString)
                 case 'nikon d800e'
@@ -462,8 +351,17 @@ classdef Calibrator
                     ProjectionInfo.RCorr = 1.35;
                     ProjectionInfo.ChipHeight = 15.6; % chip height in mm
                     ProjectionInfo.ChipWidth = 23.5; % chip width in mm
+
+                case {"basler aca4096-40uc", "aca4096-40uc"}
+                    ProjectionInfo.K = -0.22918;
+                    ProjectionInfo.PixPerMM = 1/0.00345;
+                    ProjectionInfo.Type = "general";
+                    ProjectionInfo.RCorr = 1.00937; % correction multiplier for R (obtained from calibration for imperfect lens)
+                    ProjectionInfo.ChipHeight = 0; % chip height in mm
+                    ProjectionInfo.ChipWidth = 0; % chip width in mm
+
                 otherwise
-                    warning('No spatial calibration available for this camera (%s) and lens. Assuming perfect equisolid projection on full size chip', I_info.Model{1});                    
+                    warning('No spatial calibration available for this camera (%s) and lens. Assuming perfect equisolid projection on full size chip', obj.CameraString);                    
             end
         end
     end
@@ -473,75 +371,130 @@ classdef Calibrator
     %% STATIC LOADING FUNCTIONS %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
-        function colmat = getColMat(camstring)
-            % Calibrator.getColMat loads or calculates the color correction matrix for this camera type.
-            % This is called during obj.loadSpectralCalibration if obj.SpectralMethod is "colmat".
+        function blackLevelMat = getBlackLevelMat(height, width, blackLevels)            
+            %% Calibrator.getBlackLevelMat loads or calculates the black level correction matrix for this image width and image height.
+            % This is called during obj.applyAbsolute with the blackLevels for one particular frame.
+            % The matrix is saved in a static class variable, so that at the next frame/dataset, it does not
+            % need to be re-loaded from file, as long as image width and height stay the same.
+            
+            persistent storeBLM;
+            persistent storedBLMName;
+            
+            blmname               = sprintf('%d_%d', height, width);
+            
+            if strcmp(blmname, storedBLMName) && ~isempty(storeBLM)
+                blackLevelMat = storeBLM;
+            else
+                blackLevelMat = ones(height, width, 3);
+                storeBLM      = blackLevelMat;
+                storedBLMName = blmname;
+            end
+
+            blackLevelMat(:, :, 1) = blackLevels(1);
+            blackLevelMat(:, :, 2) = blackLevels(2);
+            blackLevelMat(:, :, 3) = blackLevels(3);
+        end
+
+
+        function absMat = getAbsoluteMat(camstring, height, width, absoluteFactor)
+            %% Calibrator.getAbsoluteMat loads or calculates the absolute sensitivity correction matrix for this camera type, image width and image height.
+            % This is called during obj.loadAbsoluteCalibration.
+            % The matrix is saved in a static class variable, so that the next time a Calibrator object for the same camera is created, it does not
+            % need to be re-loaded from file.
+            
+            persistent storeWLCM;
+            persistent storedWLCMName;
+            
+            wlcmname             = sprintf('%s_%d_%d', camstring, height, width);
+            
+            if strcmp(wlcmname, storedWLCMName) && ~isempty(storeWLCM)
+                Logger.log(LogLevel.DEBUG, '\t\tUsing stored matrix\n')
+                absMat           = storeWLCM;
+            else
+                Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
+                absMat = ones(height, width, 3);
+                absMat(:, :, 1) = absoluteFactor(1);
+                absMat(:, :, 2) = absoluteFactor(2);
+                absMat(:, :, 3) = absoluteFactor(3);
+                storeWLCM        = absMat;
+                storedWLCMName   = wlcmname;
+            end
+        end
+
+
+        function vignMat = getVignMat(camstring, height, width, proj)
+            %% Calibrator.getVignMat loads or calculates the vignetting matrix for this camera type, image width and image height.
+            % This is called during obj.loadAbsoluteCalibration.
             % The matrix is saved in a static class variable, so that the next time a Calibrator object for the same camera is created, it does not
             % need to be re-loaded from file.
             %
-            % Saving to a file and loading when needed has been tested and takes longer than recalculating on ELFPC (0.8s v 0.2s)
+            % Saving to a file and loading when needed has been tested and takes longer than recalculating on ELFPC (10s v 3s)
             
-            persistent storedColMat;
-            persistent storedColMatName;
-                
-            if strcmp(camstring, storedColMatName) && ~isempty(storedColMat)
+            persistent storedVign;
+            persistent storedVignName;
+            
+            vignname = sprintf('%s_%d_%d', camstring, height, width);
+            
+            if strcmp(vignname, storedVignName) && ~isempty(storedVign)
                 Logger.log(LogLevel.DEBUG, '\t\tUsing stored matrix\n')
-                colmat = storedColMat;
-            else % load from file
+                vignMat    = storedVign;
+            else
                 Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
-                para   = elf_para;
-                fname  = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
+
+                % Calculate excentricity and vignetting correction, and store in persistents
+                warning("This new vignetting calculation has not been tested!")
+                [y, x]  = meshgrid(1:width, 1:height);       % x/y positions of all points in the image
+                exc     = real(proj.pix2theta(y, x));
+
+                % Calculate vignetting correction
+                para    = elf_para;
+                fname   = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'vign_calib.mat');
                 if isfile(fname)
-                    try
-                        TEMP    = load(fname, 'colmat');  
-                        colmat  = TEMP.colmat;
-                    catch
-                        error('Colmat method is not possible for this camera: %s', camstring);
-                    end
+                    TEMP = load(fname); % holds pf, fitted vignetting-correction function
+                    pf = TEMP.pf;
                 else
-                    error('No colour calibration exists for this camera, and colmat method is not possible: %s', camstring);
+                    warning('No vignetting calibration exists for this camera; not correcting for vignetting');
+                    pf = cat(3, zeros(3, 3), zeros(3, 3), zeros(3, 3), ones(3, 3));
                 end
-        
-                storedColMat     = colmat;
-                storedColMatName = camstring;
+                
+                vignMat = cell(size(pf, 1), 1);
+                for iapt = 1:size(pf, 1)
+                    fr      = sub_feval(pf(iapt, 1, :), exc) / sub_feval(pf(iapt, 1, :), 0);
+                    fg      = sub_feval(pf(iapt, 2, :), exc) / sub_feval(pf(iapt, 2, :), 0);
+                    fb      = sub_feval(pf(iapt, 3, :), exc) / sub_feval(pf(iapt, 3, :), 0);
+                    vignMat{iapt} = cat(3, fr, fg, fb);
+                end
+                
+                storedVign = vignMat;
+                storedVignName = vignname;
+            end
+
+            function y = sub_feval(fun, x)
+                y = fun(1)*x.^3 + fun(2)*x.^2 + fun(3)*x + fun(4);
             end
         end
         
-
+        
         function col = getCol(camstring)
-            % Calibrator.getCol loads or calculates the color correction vector for this camera type.
+            %% Calibrator.getCol loads or calculates the color correction vector for this camera type.
             % This is called during obj.loadSpectralCalibration if obj.SpectralMethod is "col".
-            % The matrix is saved in a static class variable, so that the next time a Calibrator object for the same camera is created, it does not
-            % need to be re-loaded from file.
-            %
-            % Saving to a file and loading when needed has been tested and takes longer than recalculating on ELFPC (0.8s v 0.2s)
             
-            persistent storedCol;
-            persistent storedColName;
-                
-            if strcmp(camstring, storedColName) && ~isempty(storedCol)
-                Logger.log(LogLevel.DEBUG, '\t\tUsing stored matrix\n')
-                col   = storedCol;
-            else % load from file
-                Logger.log(LogLevel.DEBUG, '\t\tCalculating new matrix\n')
-                switch camstring
-                    case "basler aca4096-40uc"
-                        % For this camera, spectral calibration is included in the absolute calibration
-                        col = 1;
-                                    
-                    otherwise
-                        para  = elf_para;
-                        fname = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
-                        if isfile(fname)
-                            TEMP    = load(fname, 'col');            
-                            col     = TEMP.col;
-                        else
-                            col     = [];
-                        end
-                
-                end
-                storedCol     = col;
-                storedColName = camstring;
+            Logger.log(LogLevel.DEBUG, '\t\tCalculating colour matrix\n')
+            switch camstring
+                case "basler aca4096-40uc"
+                    % For this camera, spectral calibration is included in the absolute calibration
+                    col = 1;
+                                
+                otherwise
+                    para  = elf_para;
+                    fname = fullfile(para.fh.Paths.calibfolder, lower(camstring), 'rgb_calib.mat');
+                    if isfile(fname)
+                        TEMP    = load(fname, 'col');            
+                        col     = TEMP.col;
+                    else
+                        col     = [];
+                    end
+            
             end
         end
     end

@@ -102,7 +102,7 @@ for i = 1:length(char_fields_to_read_dc)
     end
 end
 
-%% Finally, check time information and convert to a Matlab datenum
+%% Check time information and convert to a Matlab datenum
 
 timefield = 'DateTimeOriginal';
 if isfield(info(1), 'DigitalCamera') && isfield(info(1).DigitalCamera, timefield)
@@ -110,6 +110,13 @@ if isfield(info(1), 'DigitalCamera') && isfield(info(1).DigitalCamera, timefield
     infosum.(timefield) = tempall;
 else
     infosum.(timefield) = [];
+end
+
+%% Search for a serial number
+if isfield(info(1), "CameraSerialNumber")
+    infosum.SerialNumber = info(1).CameraSerialNumber;
+else
+    infosum.SerialNumber = "";
 end
 
 %% verbose output

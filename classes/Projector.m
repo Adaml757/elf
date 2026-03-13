@@ -71,19 +71,21 @@ classdef Projector
     end
 
     methods(Static)
-        function obj = fromInfoStructs(I_info, projInfo, erAzi, erEle, k)
+        function obj = fromInfoStructs(I_info, projInfo, erAzi, erEle)
             %PROJECTOR.FROMINFOSTRUCTS Construct an instance of this class from info structs
             %
             % Inputs:
             %   I_info   - exif information structure, needed fields: Height, Width, SamplesPerPixel, FocalLength
             %   projInfo - additional projection information that is not included in EXIF information, or needs to be calibrated
             %                 (obtained from Calibrator object), needed fields: 
+            %                   .PixPerMM - pixels per mm on the chip; if this is empty, it's calculated from chip size and image size
             %                   .ChipWidth - chip width in mm 
             %                   .ChipHeight - chip height in mm 
             %                   .Type - type of fisheye projection in the original image, e.g. "equisolid"
             %                   .RCorr - correction multiplier for R (obtained from calibration for imperfect lens)
             %                   .WCorr - correction for centre in height (obtained from calibration for imperfect lens)
             %                   .HCorr - correction for centre in width (obtained from calibration for imperfect lens)
+            %                   .K - k-parameter for the general fisheye equation, if .Type if "general"
             %   erAzi, erEle - output angle ranges defining the desired grid of the projected images (default [-90, 0.1, 90], and [90, -0.1, -90])
 
             arguments
@@ -91,7 +93,6 @@ classdef Projector
                 projInfo (1,1) struct
                 erAzi (1,3) double = [-90, 0.1, 90]
                 erEle (1,3) double = [90, -0.1, -90]
-                k (1,1) double = 0
             end
 
             Logger.log(LogLevel.INFO, 'Creating a Projector object for %s camera\n', I_info.Model{1})
@@ -99,12 +100,17 @@ classdef Projector
             imSize = [I_info.Height, I_info.Width, I_info.SamplesPerPixel];
             projectionType = projInfo.Type;
 
-            shortSide = min(imSize(1:2));
-            chipShortSide = min([projInfo.ChipHeight projInfo.ChipWidth]);
 
-            pixPerMM = shortSide / chipShortSide;
+            if ~isempty(projInfo.PixPerMM)
+                pixPerMM = projInfo.PixPerMM;
+            else
+                shortSide = min(imSize(1:2));
+                chipShortSide = min([projInfo.ChipHeight projInfo.ChipWidth]);
+                pixPerMM = shortSide / chipShortSide;
+            end
             corrFocalLength = I_info.FocalLength * projInfo.RCorr;   
             midPoint = [(imSize(1)+1)/2+projInfo.HCorr; (imSize(2)+1)/2+projInfo.WCorr];        % centre of image
+            k = projInfo.K;
 
             obj = Projector(imSize, projectionType, erAzi, erEle, midPoint, pixPerMM, corrFocalLength, k);   
         end
