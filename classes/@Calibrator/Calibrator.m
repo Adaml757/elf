@@ -21,6 +21,7 @@ classdef Calibrator
         VignettingMat
         Acf     % Aperture correction factor in new d850 calibration
         SpectralMatrix
+        LinearisationTable
     end
 
     % methods in other files
@@ -86,9 +87,15 @@ classdef Calibrator
             % Apply calibration
             % Subtract the camera's black level (saturation level has to be taken into account later)
             im          = im - Calibrator.getBlackLevelMat(obj.Height, obj.Width, info.blackLevels);
+            if ~isempty(obj.LinearisationTable)
+                ctemplate = ones(size(im, 1), size(im, 2));
+                c = cat(3, 1*ctemplate, 2*ctemplate, 3*ctemplate);
+                im = sub_linearise(im, c);
+            end
+
             conf        = im; % Use these raw values (after dark subtraction) to define every pixel's confidence: 
                               % In HDR calculation, each HDR pixel will be assigned the radiance value it holds in the image where it has the highest confidence 
-            confFactors = obj.getSaturationLevel(info) - info.blackLevels(:)';
+            confFactors = obj.getSaturationLevel(info) - info.blackLevels(:)';  %% TODO: Unsure how this would have to be changed for linearised data; check through HDR calculation
         
             switch lower(obj.CameraString)
                 case {"aca4096-40uc", "basler aca4096-40uc"}
@@ -128,7 +135,21 @@ classdef Calibrator
                 otherwise
                     error('Aperture %g currently not supported.', apt);
             end
-            im = im ./ obj.VignettingMat{apInd};        
+            im = im ./ obj.VignettingMat{apInd};
+
+            function x_lin = sub_linearise(x, c)
+                % Calculate linear radiance values x_lin from dark-corrected counts x, with colour channel c
+
+                lut_counts = obj.LinearisationTable(:, 1);
+                lut_lin    = obj.LinearisationTable(:, 2:end);
+
+                x = min(max(x, 0), max(lut_counts));
+                x_lin = nan(size(x));
+                for ich = 1:3
+                    sel = c==ich;
+                    x_lin(sel) = interp1(lut_counts, lut_lin(:, ich), x(sel));
+                end
+            end
         end
 
 
@@ -144,7 +165,7 @@ classdef Calibrator
             % Outputs:
             %   im          - M x N x 3 double, calibrated digital image (in photons/nm/s/sr/m^2)
 
-            if obj.CameraString == "basler aca4096-40uc" || obj.CameraString == "aca4096-40uc"
+            if lower(obj.CameraString) == "basler aca4096-40uc" || lower(obj.CameraString) == "aca4096-40uc"
                 % For this camera, spectral calibration is included in the absolute calibration
                 return
             end
@@ -244,6 +265,12 @@ classdef Calibrator
                     I_info = struct("Height", obj.Height, "Width", obj.Width, "SamplesPerPixel", 3, "FocalLength", 1.8, "Model", obj.CameraString);
                     proj = Projector.fromInfoStructs(I_info, obj.ProjectionInfo); %Iinfo needs Height, Width, SamplesPerPixel, FocalLength
                     obj.VignettingMat = Calibrator.getVignMat(camstring, obj.Height, obj.Width, proj);
+
+                    % 3. Linearisation
+                    fname = fullfile(para.fh.Paths.calibfolder, camstring, "linearity.mat");
+                    temp = load(fname, "lut", "ch_corr_linearity");
+                    obj.LinearisationTable = [zeros(1, size(temp.lut, 2));
+                                              temp.lut(:, 1) 10.^temp.lut(:, 2:end)];
 
                 otherwise
                     % For an unknown camera, use no calibration correction; an uncalibrated image is better than none
@@ -471,6 +498,7 @@ classdef Calibrator
 
             function y = sub_feval(fun, x)
                 y = fun(1)*x.^3 + fun(2)*x.^2 + fun(3)*x + fun(4);
+                y(y<0) = NaN;
             end
         end
         

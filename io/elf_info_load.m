@@ -21,7 +21,7 @@ switch lower(ext)
             info.DigitalCamera.FNumber = info.FNumber;
             info.DigitalCamera.ExposureBiasValue = info.BrightnessValue;
             info.DigitalCamera.FocalLength = info.FocalLength;
-            info.DigitalCamera.Gain = round(10*log10((info.iso/100).^2));
+            info.DigitalCamera.Gain = round(10*log10((info.ISOSpeedRatings/100).^2));
             info.DigitalCamera.DateTimeOriginal = datestr(datenum(info.FileModDate, "dd-mmm-yyyy HH:MM:SS"), 'yyyy:mm:dd HH:MM:SS'); % NOTE: There is also info.DateTime (e.g. "9471270233934"), in ns, from ChunkTimestamp
             info.ChipTemperature = info.UnknownTags.Value; % Chip temperature in C
         else
