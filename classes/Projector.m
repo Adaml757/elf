@@ -281,7 +281,7 @@ classdef Projector
             [X, Y, Z] = elf_support_rot3D(X, Y, Z, -optAx(1), 'z');
             [X, Y, Z] = elf_support_rot3D(X, Y, Z, optAx(2), 'y');
             theta_deg = acosd(X);                       % theta is the angle between a viewing direction and the X-axis (X is equal to the scalar dot product of that direction and the X-axis)
-            gamma     = atan2d(Z, -Y) + rotAroundOptAx; % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis; 
+            gamma     = atan2d(Z, Y) + rotAroundOptAx; % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis;
             R_mm      = obj.theta2r(theta_deg);
             R_pix     = R_mm * obj.PixPerMM;
             w         = R_pix .*  cosd(gamma) + obj.MidPoint(2); % along w; this is 0 + mid for azimuth 0

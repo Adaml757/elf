@@ -73,8 +73,6 @@ para.fh.saveInfoSum(para, infoSum); % saves infosum AND para for use in later st
 
 %% Step 1: Unwarp images and calculate HDR scenes
 
-
-
 tic; % Start taking time
 wbh = waitbar(0, "Starting scene-by-scene calibration, HDR creation and analysis...");
 

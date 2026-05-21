@@ -18,7 +18,7 @@ function elf_mainX_explore(dataSet, modules, ~)
                     Logger.log(LogLevel.INFO, '      Processing environment %s\n', para.fh.Paths.dataset);
     
     %% calculate thumbs
-    thumbs = zeros(100, 100, infoSum.SamplesPerPixel, length(allFiles), infoSum.class{1});      % pre-allocate for thumbnails of all processed images
+    thumbs = zeros(100, 100, infoSum.SamplesPerPixel, length(allFiles), "double");      % pre-allocate for thumbnails of all processed images
     for imnr = 1:length(allFiles)
         thisIm = para.fh.loadScene_tif(fNames_im{imnr});  % output is uint16        
         thumbs(:, :, :, imnr) = imresize(thisIm, [100 100]);

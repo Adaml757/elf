@@ -1,9 +1,9 @@
 function elf_mainX_exploreDiag(dataSet, modules)
-% ELF_MAIN4_DISPLAY simply displays the intensity mean and mean image for a dataset
-%
-% elf_main4_display(dataSet, imgFormat)
-
-if nargin < 2 , modules = {}; end
+    % ELF_MAINX_EXPLOREDIAG shows a montage of the diagnostic images for all scenes
+    %
+    % elf_mainX_exploreDiag(dataSet, modules)
+    
+    if nargin < 2 , modules = {}; end
     if nargin < 1 || isempty(dataSet), error('You have to provide a valid dataset name'); end 
     
     %% Set up paths and file names; read info, infosum and para
@@ -18,7 +18,7 @@ if nargin < 2 , modules = {}; end
                     Logger.log(LogLevel.INFO, '      Processing environment %s\n', para.fh.Paths.dataset);
 
     %% calculate thumbs
-    thumbs = zeros(100, 100, infoSum.SamplesPerPixel, length(allFiles), infoSum.class{1});      % pre-allocate for thumbnails of all processed images
+    thumbs = zeros(100, 100, infoSum.SamplesPerPixel, length(allFiles), "double");      % pre-allocate for thumbnails of all processed images
     for imnr = 1:length(allFiles)
         thisIm = para.fh.loadSceneDiag_tif(fNames_im{imnr}); % output is uint8
         thumbs(:, :, :, imnr) = imresize(thisIm, [100 100]);
@@ -30,7 +30,8 @@ if nargin < 2 , modules = {}; end
     if size(thumbs, 4)==1
         hi2 = montage({thumbs}, 'thumbnailsize', [100 100], BackgroundColor="white", BorderSize=[1 1]);  % if thumbs is just a single MxNx3 image, it would be interpreted as 3 grayscale-images
     else
-        hi2 = montage(double(thumbs), 'thumbnailsize', [100 100], BackgroundColor="white", BorderSize=[1 1]);
+        hi2 = montage(thumbs, 'thumbnailsize', [100 100]);
+        % hi2 = montage(double(thumbs), 'thumbnailsize', [100 100], BackgroundColor="white", BorderSize=[1 1]);
     end
     res.fnames_im = fNames_im;
     res.infosum = infoSum;
