@@ -239,7 +239,7 @@ classdef Projector
             w_rel = w-obj.MidPoint(2);
             R_pix = sqrt(h_rel.^2 + w_rel.^2); % each point's radial excentricity on the sensor (in pixels)
             R_mm  = R_pix / obj.PixPerMM;      % each point's radial excentricity on the sensor (in mm)
-            gamma = atan2d(-h_rel, w_rel) - rotAroundOptAx; % angle around the optical axis
+            gamma = atan2d(-h_rel, -w_rel) - rotAroundOptAx; % angle around the optical axis
 
             theta_deg = obj.r2theta(R_mm);           % angle to the optical axis
 
@@ -284,7 +284,7 @@ classdef Projector
             gamma     = atan2d(Z, Y) + rotAroundOptAx; % gamma is the angle between the Y/Z projection of a viewing direction and the Y axis;
             R_mm      = obj.theta2r(theta_deg);
             R_pix     = R_mm * obj.PixPerMM;
-            w         = R_pix .*  cosd(gamma) + obj.MidPoint(2); % along w; this is 0 + mid for azimuth 0
+            w         = R_pix .* cosd(gamma) + obj.MidPoint(2); % along w; this is 0 + mid for azimuth 0
             h         = R_pix .* -sind(gamma) + obj.MidPoint(1); % along h; this is 0 + mid for elevation 0, and -1 + mid for elevation 90; 
                                                                  % the -sin makes sure that high elevation values are mapped onto a low image index
             if roundIt
