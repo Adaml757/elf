@@ -128,7 +128,7 @@ classdef Calibrator
             switch apt
                 case {1.4, 3.5, 4, 4.5, 4.8, 5.6} % 1.4 is for Basler camera
                     apInd = 1; % treat as aperture 3.5 for vignetting
-                case {8, 9, 10, 11, 14}
+                case {8, 9, 9.5, 10, 11, 14, 16}
                     apInd = 2; % treat as aperture 8 for vignetting
                 case 22
                     apInd = 3; % treat as aperture 22 for vignetting
