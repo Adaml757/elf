@@ -231,7 +231,7 @@ classdef Projector
             if isempty(optAx), optAx = ViewDir.H; end
             if isa(optAx, "ViewDir"), optAx = optAx.AzEl; end
             if isempty(w) || isempty(h)
-                [w, h] = meshgrid(1:obj.Size(2), 1:obj.Size(1));
+                [h, w] = meshgrid(1:obj.Size(2), 1:obj.Size(1));
             end
 
             %
@@ -505,7 +505,7 @@ classdef Projector
             %   projection_ind  - projections index matrix. 
             % 
             % The projected image can be calculated as 
-            % im_proj = Projector.apply(projection_ind, im, proj.Size)
+            % im_proj = Projector.apply(im, projection_ind, proj.Size)
 
             % Check if this already exists in the buffer
             projection_ind = Buffer.retrieve("Array2ImageProjection", {obj, prArray, optAx});
