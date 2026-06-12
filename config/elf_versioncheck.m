@@ -58,6 +58,13 @@ end
 if verbose
     Logger.log(LogLevel.INFO, '      You are running MATLAB version %s on a %s.\n', v.Version, compstr);
 end
+if ~isMATLABReleaseOlderThan("R2025a")
+    if verbose
+        Logger.log(LogLevel.INFO, '\n');
+        Logger.log(LogLevel.INFO, '      The Matlab graphics engine has changed significantly with version 2025a. ELF plots will not be plotted correctly and the software is likely to freeze frequently. It is STRONGLY recommended to downgrade to Matlab 2024b or older!\n');
+    end
+    warndlg('The Matlab graphics engine has changed significantly with version 2025a. ELF plots will not be plotted correctly and the software is likely to freeze frequently. It is STRONGLY recommended to downgrade to Matlab 2024b or older!');
+end
 if verLessThan('matlab', '9.0')
     if verbose
         Logger.log(LogLevel.INFO, '\n');
@@ -104,6 +111,6 @@ else
         Logger.log(LogLevel.INFO, '      Statistics and Machine Learning Toolbox license and installation found.\n');
     end
 end
-if ~verLessThan('matlab', '9.0') && osfine && verbose && license('test', 'Image_Toolbox') && license('test', 'Statistics_Toolbox')
+if ~verLessThan('matlab', '9.0') && isMATLABReleaseOlderThan("R2025a") && osfine && verbose && license('test', 'Image_Toolbox') && license('test', 'Statistics_Toolbox')
     Logger.log(LogLevel.INFO, '      This program should be running fine.\n');
 end
