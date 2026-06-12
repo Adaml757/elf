@@ -56,6 +56,9 @@ classdef FileHandler < handle
             if ~exist(fullfile(obj.Paths.datapath, obj.Paths.polarfolder), 'file')
                 mkdir(obj.Paths.datapath, obj.Paths.polarfolder);
             end
+            if ~exist(fullfile(obj.Paths.datapath, obj.Paths.skyfolder), 'file')
+                mkdir(obj.Paths.datapath, obj.Paths.skyfolder);
+            end
             if ~exist(obj.Paths.outputfolder, 'file')
                 mkdir(obj.Paths.outputfolder);
             end
@@ -358,6 +361,15 @@ classdef FileHandler < handle
         function saveMeanElfPlot_pdf(obj, fh)
             obj.savePlot(fh, obj.Paths.fname_meanelf_pdf, "pdf", true);
         end
+
+        %% SKY module plots
+        function saveSkyPlot_jpg(obj, sceneName, fhs, fwhms)
+            [~, f] = fileparts(sceneName); 
+            for i = 1:length(fhs)
+                fName  = fullfile(obj.Paths.datapath, obj.Paths.skyfolder, f + sprintf("_%.1f.jpg", fwhms(i)));
+                obj.savePlot(fhs(i), fName, "jpg", true);
+            end
+        end
     end
 
 
@@ -468,7 +480,7 @@ classdef FileHandler < handle
             if verLessThan('matlab', '8.4')
                 print(sprintf('-f%d', fh), absPath, args{:});
             else
-                print(fh, absPath, args{:});
+                exportgraphics(fh, absPath);
             end
             
             sub_hideui(fh, true); % re-activate user interface
@@ -487,10 +499,6 @@ classdef FileHandler < handle
                     state = 'off';
                 end
 
-                set(findobj('tag', sprintf('fig%d_gui_BW', fignum)), 'visible', state);
-                set(findobj('tag', sprintf('fig%d_gui_R', fignum)), 'visible', state);
-                set(findobj('tag', sprintf('fig%d_gui_G', fignum)), 'visible', state);
-                set(findobj('tag', sprintf('fig%d_gui_B', fignum)), 'visible', state);
                 set(findobj('tag', sprintf('fig%d_gui_posslider', fignum)), 'visible', state);
                 set(findobj('tag', sprintf('fig%d_gui_rangeslider', fignum)), 'visible', state);
 

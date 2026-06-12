@@ -16,30 +16,6 @@ switch get(src, 'tag')
         xlim(ax3, newax);
         xlim(ax4, newax);
     otherwise
-        % probably a RGB/BW button
-        if regexp(get(src, 'tag'), 'fig\w*_gui_\w*')
-            % determine figure number
-            C = strsplit(get(src, 'tag'), '_');
-            figID = C{1};
-
-            switch get(src, 'Value')
-                case 1 % switched on
-                    % set all others to off
-                    set(findobj('tag', sprintf('%s_gui_R', figID)), 'Value', 0);
-                    set(findobj('tag', sprintf('%s_gui_G', figID)), 'Value', 0);
-                    set(findobj('tag', sprintf('%s_gui_B', figID)), 'Value', 0);
-                    set(findobj('tag', sprintf('%s_gui_BW', figID)), 'Value', 0);
-                    set(src, 'Value', 1);
-                case 0 % switched off, don't allow it
-                    set(src, 'Value', 1);
-
-                otherwise
-                    error('Internal error: Unknown Value');
-            end
-            elf_plot_int_setvis(figID);
-
-        else
-            %ignore for now
-        end
+        %ignore for now
 end
 

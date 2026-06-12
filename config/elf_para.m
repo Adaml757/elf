@@ -47,6 +47,7 @@ end
 paths.matfolder   = "mat";            % subfolder of data folder into which to save the .mat descriptor files (and individual .pdf files, if activated) 
 paths.filtfolder  = "filt";           % subfolder of data folder into which to save the filtered images
 paths.polarfolder = "polar";           % subfolder of data folder into which to save the filtered images
+paths.skyfolder   = "sky";           % subfolder of data folder into which to save the filtered images
 paths.scenefolder = "scenes";         % subfolder of data folder into which to save the scene images
 paths.diagfolder  = "diag";         % subfolder of data folder into which to save the diagnostic images
 paths.calibfolder = fullfile(fileparts(mfilename('fullpath')), '..', 'calibration');

@@ -48,12 +48,3 @@ switch p.radianceReferencesLocation
         h.ahReferenceLabels    = axes(stdoAx{:}, 'Position', [pad(1)+yAxisLabelWidth+3*colSpacing/2+.5*axWidth 1-pad(4)*0.75 axWidth pad(4)/2], 'tag', 'gui_axbi'); % outside top
 end
 
-%% Buttons to switch range indicators for different colour channels (not used anymore but kept for backwards compatibility)
-stdoB = {'Parent', h.fh, 'Units', 'normalized', 'Style', 'togglebutton', 'backgroundcolor', [.8 .8 .8], ...
-    'fontweight', 'bold', 'fontsize', axFS, 'callback', @elf_callbacks_elfgui, 'Visible', 'off'};     % standard options for each button
-x = pad(1)+yAxisLabelWidth+3*colSpacing/2+0.5*axWidth;
-y = 1-pad(4)-0.03;
-uicontrol(stdoB{:}, 'Position', [x+0.01 y .04 .02], 'tag', 'intfig_gui_BW', 'String', 'W', 'foregroundcolor', p.intChannelColours{4}, 'Value', 1);
-uicontrol(stdoB{:}, 'Position', [x+0.05 y .02 .02], 'tag', 'intfig_gui_R',  'String', 'R', 'foregroundcolor', p.intChannelColours{1}, 'Value', 0);
-uicontrol(stdoB{:}, 'Position', [x+0.07 y .02 .02], 'tag', 'intfig_gui_G',  'String', 'G', 'foregroundcolor', p.intChannelColours{2}, 'Value', 0);
-uicontrol(stdoB{:}, 'Position', [x+0.09 y .02 .02], 'tag', 'intfig_gui_B',  'String', 'B', 'foregroundcolor', p.intChannelColours{3}, 'Value', 0);

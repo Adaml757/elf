@@ -105,7 +105,7 @@ else
     
         if refresh
             % update gui visibility
-            %% TODO: Would be rgeat if the image was updated here, as well
+            %% TODO: Would be great if the image was updated here, as well
             status = elf_checkdata(para, false);
             elf_maingui_visibility(gui, status);
         end

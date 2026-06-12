@@ -196,9 +196,6 @@ end
 %% Reset warnings
 warning(s)
 
-%% set visibility
-elf_plot_int_setvis('intfig'); % sets visibility of RGB plot using graphics object tags
-
 end
 
 %% subfunctions
