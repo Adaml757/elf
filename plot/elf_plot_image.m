@@ -54,13 +54,12 @@ switch handletype
     case 'uipanel'
         % a panel object was provided. Clear the panel and create axes.
         delete(get(h, 'Children'));
-        switch proj
-            case {'undefined', 'default', 'equisolid', 'zone', 'filt1', 'filt10', 'equisolid_HDR', 'equisolid_diag'}
-                % No axes needed
-                ha = axes('Parent', h, 'Position', [0 0 1 1], 'Units', 'normalized');
-            otherwise
-                % leave room for axes
-                ha = axes('Parent', h, 'OuterPosition', [0 0 1 1], 'Units', 'normalized'); % Position will be reset later
+        if ismember(proj, {'undefined', 'default', 'equisolid', 'zone', 'equisolid_HDR', 'equisolid_diag'}) || startsWith(proj, "filt")
+            % No axes needed
+            ha = axes('Parent', h, 'Position', [0 0 1 1], 'Units', 'normalized');
+        else
+            % leave room for axes
+            ha = axes('Parent', h, 'OuterPosition', [0 0 1 1], 'Units', 'normalized'); % Position will be reset later
         end
     otherwise
         error('Unknown handle type.');
@@ -263,18 +262,16 @@ switch proj
             set(cb, 'TickLabels', num2str(100*(1-a)'), 'Direction', 'reverse');
             cb.Label.String = 'Contrast (%)';
         end
-    case 'filt1'
-        % Display zones (hack!)
-        hold(ha, 'on');
-        plot([0 0 0 0;362 362 362 362], [81 161 201 281; 81 161 201 281], 'r--');
-        axis(ha, 'off');
-    case 'filt10'
-        % Display zones (hack!)
-        hold(ha, 'on');
-        plot([0 0 0 0;38 38 38 38], [9 17 21 29; 9 17 21 29], 'r--');
-        axis(ha, 'off');
     otherwise
-        error('Unknown projection');
+        if startsWith(proj, "filt")
+            whichFilt = str2double(extractAfter(proj, "filt"));
+            % Display grid
+            hold(ha, 'on');
+            plot(ha, I_info.grids.filter(whichFilt).fisheye.x, I_info.grids.filter(whichFilt).fisheye.y, 'k:');
+            axis(ha, 'off');
+        else
+            error('Unknown projection');
+        end
 end
     
 
