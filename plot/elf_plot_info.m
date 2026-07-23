@@ -1,7 +1,7 @@
 function elf_plot_info(h, infoSum, name, nScenes, p)
     % plots the info fields in the ELF main plot
 
-    elfText   = {'\makebox[4in][c]{\fontsize{60}{40}\textbf{E}\fontsize{15}{40}\textbf{nvironmental} \fontsize{60}{40}\textbf{L}\fontsize{15}{40}\textbf{ight} \fontsize{60}{40}\textbf{F}\fontsize{15}{40}\textbf{ield}}'};
+    elfText   = {'Environmental Light Field'};
     nExposuresPerScene = length(infoSum.DateTimeOriginal)/nScenes;
     if isfield(infoSum, 'blackLevels')
         if ~isempty(infoSum.blackWarnings)
